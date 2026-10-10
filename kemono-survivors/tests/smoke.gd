@@ -24,7 +24,7 @@ func run() -> void:
 		game.spawn_enemy(0, Vector2(90, 0))
 		game.facing = Vector2.RIGHT
 		game.weapon_attack()
-		for i in range(120):
+		for i in range(480):
 			game.weapon_attack()
 			game.step_world(0.016)
 		check(game.kills > 0, "weapon kills enemy %d" % index)
@@ -57,6 +57,37 @@ func run() -> void:
 	var old_damage = game.damage
 	game.apply_upgrade("power")
 	check(game.damage > old_damage and game.state == "playing", "upgrade resumes")
+	game.enemies.clear()
+	game.spawn_enemy(0, game.player + Vector2(80,0))
+	var before: Vector2 = game.enemies[0].pos
+	game.hit_enemy(game.enemies[0], 1)
+	check(game.enemies[0].push.length() >= 500, "strong knockback impulse")
+	game.step_world(0.1)
+	check(game.enemies[0].pos.distance_to(before) > 40, "knockback displacement")
+	for index in range(4):
+		game.select_hero(index)
+		game.start_run()
+		game.spawn_enabled = false
+		check(not game.use_ultimate(), "uncharged ultimate blocked")
+		game.ultimate_charge = 100
+		game.spawn_enemy(0, Vector2(150,0))
+		game.hp = game.max_hp * 0.5
+		check(game.use_ultimate() and game.ultimate_charge == 0, "ultimate activates and consumes charge")
+		check(not game.use_ultimate(), "ultimate cannot repeat")
+		game.step_world(0.05)
+		check(game.kills > 0 or game.enemies[0].hp < game.enemies[0].max_hp, "ultimate damage")
+		if index == 2: check(game.hp > game.max_hp * 0.5, "wolf ultimate heals")
+		for i in range(110): game.step_world(0.05)
+		check(game.ultimate_time == 0, "ultimate expires")
+	game.start_run()
+	game.spawn_enabled = false
+	game.add_shake(99)
+	check(game.shake_strength <= 18, "shake capped")
+	game.step_world(0.01)
+	check(game.shake_offset.length() > 0, "shake animates")
+	game.shake_enabled = false
+	game.step_world(0.01)
+	check(game.shake_offset == Vector2.ZERO, "shake toggle")
 	var image := Image.create(4096,4096,false,Image.FORMAT_RGBA8)
 	image.fill(Color("a7dcb2"))
 	check(image.save_png("user://4k.png") == OK, "4K fixture")

@@ -47,6 +47,15 @@ var rng := RandomNumberGenerator.new()
 var movement := Vector2.ZERO
 var orbit_timer := 0.0
 var spawn_enabled := true
+const ULTIMATES = ["Inferno", "Moonstorm", "Winter Heart", "Tempest"]
+var ultimate_charge := 0.0
+var ultimate_time := 0.0
+var ultimate_tick := 0.0
+var cast_time := 0.0
+var animation_clock := 0.0
+var shake_strength := 0.0
+var shake_offset := Vector2.ZERO
+var shake_enabled := true
 var facing := Vector2.RIGHT
 var slash_time := 0.0
 var blade_time := 0.0
@@ -130,7 +139,7 @@ func build_ui() -> void:
 	box.add_child(button("Import character PNG / JSON", func(): file_dialog.popup_centered_ratio(0.75)))
 	box.add_child(button("Use built-in character", func(): custom = false; select_hero(hero)))
 	box.add_child(button("ENTER THE NIGHT", start_run))
-	box.add_child(label("WASD: move · Left click / J: slash\nRight click / K: weapon · Q: hero skill\nSpace: dodge · E: slam · Esc: pause · F11: fullscreen", 17))
+	box.add_child(label("WASD: move · Left click / J: slash\nRight click / K: weapon · Q: hero skill\nSpace: dodge · E: slam · R: ultimate · F8: shake · Esc: pause", 17))
 	box.add_child(button("Quit", func(): get_tree().quit()))
 	file_dialog = FileDialog.new()
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
@@ -193,6 +202,13 @@ func start_run() -> void:
 	dodge_cd = 0
 	slam_cd = 0
 	hurt_time = 0
+	ultimate_charge = 0
+	ultimate_time = 0
+	ultimate_tick = 0
+	cast_time = 0
+	animation_clock = 0
+	shake_strength = 0
+	shake_offset = Vector2.ZERO
 	enemies.clear()
 	bolts.clear()
 	gems.clear()
@@ -201,16 +217,18 @@ func start_run() -> void:
 	state = "playing"
 	menu.hide()
 	overlay.hide()
-	notice.text = "LMB/J: slash  ·  RMB/K: weapon  ·  Q: hero  ·  SPACE: dodge  ·  E: slam  ·  ESC: pause"
+	notice.text = "LMB/J: slash  ·  RMB/K: weapon  ·  Q: hero  ·  SPACE: dodge  ·  E: slam  ·  R: ultimate  ·  F8: shake  ·  ESC: pause"
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo: return
+	if event.keycode == KEY_F8: shake_enabled = not shake_enabled
 	if event.keycode == KEY_F11:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN)
 	if state == "playing":
 		if event.keycode == KEY_Q: use_skill()
 		if event.keycode == KEY_SPACE: dodge()
 		if event.keycode == KEY_E: slam()
+		if event.keycode == KEY_R: use_ultimate()
 	if event.keycode == KEY_ESCAPE:
 		if state == "playing":
 			state = "paused"
@@ -224,7 +242,7 @@ func resume() -> void:
 func _process(delta: float) -> void:
 	if state == "playing":
 		movement = Vector2(float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT)) - float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT)), float(Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN)) - float(Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP))).normalized()
-		var aim := get_global_mouse_position() - Vector2(640, 410)
+		var aim := get_global_mouse_position() - Vector2(640, 410) - shake_offset
 		if aim.length() > 8: facing = aim.normalized()
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_physical_key_pressed(KEY_J): basic_attack()
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or Input.is_physical_key_pressed(KEY_K): weapon_attack()
@@ -234,7 +252,24 @@ func _process(delta: float) -> void:
 func step_world(dt: float) -> void:
 	if state != "playing": return
 	elapsed += dt
-	player += movement * speed * dt
+	animation_clock += dt
+	shake_strength = maxf(0, shake_strength - dt * 32)
+	shake_offset = Vector2(rng.randf_range(-1,1), rng.randf_range(-1,1)) * shake_strength if shake_enabled else Vector2.ZERO
+	cast_time = maxf(0, cast_time - dt)
+	ultimate_charge = minf(100, ultimate_charge + dt * 1.5)
+	if ultimate_time > 0:
+		ultimate_time = maxf(0, ultimate_time - dt)
+		ultimate_tick -= dt
+		if ultimate_tick <= 0:
+			ultimate_tick = 0.5
+			add_shake(10)
+			var radius: float = [360, 260, 320, 550][hero]
+			area_damage(radius, damage * [2.2, 2.0, 1.6, 2.5][hero], Color(HEROES[hero].color))
+			if hero == 2:
+				hp = minf(max_hp, hp + max_hp * 0.06)
+				for enemy in enemies:
+					if player.distance_to(enemy.pos) < radius: enemy.slow = 1.5
+	player += movement * speed * (1.5 if ultimate_time > 0 and hero == 1 else 1.0) * dt
 	invincible = maxf(0, invincible - dt)
 	skill_cooldown = maxf(0, skill_cooldown - dt)
 	attack_timer = maxf(0, attack_timer - dt)
@@ -250,12 +285,16 @@ func step_world(dt: float) -> void:
 		for i in range(1 + mini(4, int(elapsed / 90))): spawn_enemy()
 	for enemy in enemies:
 		var distance: Vector2 = player - enemy.pos
-		enemy.pos += distance.normalized() * float(enemy.speed) * (0.45 if float(enemy.get("slow", 0)) > 0 else 1.0) * dt
+		var push: Vector2 = enemy.get("push", Vector2.ZERO)
+		enemy.pos += push * dt
+		enemy.push = push.move_toward(Vector2.ZERO, 1350 * dt)
+		enemy.pos += distance.normalized() * float(enemy.speed) * (0.1 if push.length() > 50 else 1.0) * (0.45 if float(enemy.get("slow", 0)) > 0 else 1.0) * dt
 		enemy.flash = maxf(0, float(enemy.get("flash", 0)) - dt)
 		enemy.slow = maxf(0, float(enemy.get("slow", 0)) - dt)
 		if distance.length() < 27 and invincible <= 0:
 			hp -= float(enemy.damage)
 			hurt_time = 0.25
+			add_shake(7)
 			play_sound("hurt")
 			enemy.pos -= distance.normalized() * 35
 			invincible = 0.7
@@ -272,6 +311,7 @@ func step_world(dt: float) -> void:
 		if enemies[i].hp <= 0:
 			gems.append({"pos":enemies[i].pos, "value":3.0 if enemies[i].elite else 1.0})
 			kills += 1
+			ultimate_charge = minf(100, ultimate_charge + (6 if enemies[i].elite else 2))
 			play_sound("defeat")
 			enemies.remove_at(i)
 	bolts = bolts.filter(func(b): return b.life > 0)
@@ -296,6 +336,8 @@ func step_world(dt: float) -> void:
 		show_level_up()
 	hud.text = "HP %d / %d     LEVEL %d     XP %d / %d     %02d:%02d     KILLS %d\n%s   ·   Skill %s" % [maxi(0, int(hp)), int(max_hp), level, int(xp), int(xp_needed), int(elapsed)/60, int(elapsed)%60, kills, WEAPONS[weapon], "READY" if skill_cooldown <= 0 else "%ds" % int(ceil(skill_cooldown))]
 	hud.text += "   Dodge: %s   Slam: %s" % ["READY" if dodge_cd <= 0 else "%.1fs" % dodge_cd, "READY" if slam_cd <= 0 else "%.1fs" % slam_cd]
+
+	hud.text += "\nR: %s  %s" % [ULTIMATES[hero], "ACTIVE" if ultimate_time > 0 else ("READY" if ultimate_charge >= 100 else "%d%%" % int(ultimate_charge))]
 
 func spawn_enemy(kind := -1, at := Vector2.INF) -> void:
 	if enemies.size() >= 220: return
@@ -348,6 +390,8 @@ func area_damage(radius: float, amount: float, color_value: Color) -> void:
 
 func use_skill() -> bool:
 	if state != "playing" or skill_cooldown > 0: return false
+	cast_time = 0.4
+	add_shake(9)
 	play_sound("skill")
 	skill_cooldown = [9.0, 5.0, 12.0, 10.0][hero]
 	match hero:
@@ -413,11 +457,12 @@ func load_settings() -> void:
 		hero = clampi(int(parsed.get("hero", 0)), 0, 3)
 
 func screen_pos(world: Vector2) -> Vector2:
-	return world - player + Vector2(640, 410)
+	return world - player + Vector2(640, 410) + shake_offset
 
 func _draw() -> void:
+	var center := Vector2(640,410) + shake_offset
 	draw_rect(Rect2(0, 0, 1280, 800), Color("101e26"))
-	var offset := Vector2(fposmod(-player.x, 80), fposmod(-player.y, 80))
+	var offset := Vector2(fposmod(-player.x + shake_offset.x, 80), fposmod(-player.y + shake_offset.y, 80))
 	for x in range(-1, 17):
 		for y in range(-1, 12):
 			var p := Vector2(x * 80, y * 80) + offset
@@ -440,36 +485,58 @@ func _draw() -> void:
 		draw_colored_polygon(PackedVector2Array([p+Vector2(0,-7),p+Vector2(5,0),p+Vector2(0,7),p+Vector2(-5,0)]), Color("71e6b0"))
 	for enemy in enemies: draw_enemy(screen_pos(enemy.pos), enemy)
 	for bolt in bolts:
-		draw_circle(screen_pos(bolt.pos), 7, Color("f49e56"))
+		var bolt_pos := screen_pos(bolt.pos)
+		draw_line(bolt_pos - (bolt.velocity as Vector2).normalized() * 26, bolt_pos, Color("e77349"), 5)
+		draw_circle(bolt_pos, 7, Color("f49e56"))
 		draw_circle(screen_pos(bolt.pos), 3, Color("fff0b2"))
 	for effect in effects:
 		var c: Color = effect.color
 		c.a = minf(1, float(effect.life) * 3)
 		var p := screen_pos(effect.pos)
-		draw_arc(p, effect.radius, 0, TAU, 48, c, 4)
+		var ring_radius: float = effect.radius * (1.0 + (1.0 - minf(1, effect.life / 0.35)) * 0.3)
+		draw_arc(p, ring_radius, 0, TAU, 48, c, 4)
 		if effect.has("from"): draw_line(screen_pos(effect.from), p, c, 4)
 		if effect.has("damage"):
 			draw_string(ThemeDB.fallback_font, p + Vector2(-12, -35 - (0.5 - float(effect.life)) * 55), str(int(effect.damage)), HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color("fff0c4"))
 			for j in range(5): draw_line(p + Vector2.from_angle(j * TAU/5) * 12, p + Vector2.from_angle(j * TAU/5) * 23, c, 2)
 	if blade_time > 0:
 		for i in range(2 + mini(4, upgrades.multishot)):
-			var p := Vector2(640, 410) + Vector2.from_angle(orbit_timer * 3 + i * TAU / (2 + mini(4, upgrades.multishot))) * 80
+			var p := center + Vector2.from_angle(orbit_timer * 3 + i * TAU / (2 + mini(4, upgrades.multishot))) * 80
 			draw_line(p - Vector2(8, 12), p + Vector2(8, 12), Color("dad7ff"), 6)
+	if ultimate_time > 0:
+		var color_value := Color(HEROES[hero].color)
+		for ring in range(3):
+			draw_arc(center, 95 + ring * 32 + sin(animation_clock * 6 + ring) * 10, animation_clock + ring, animation_clock + ring + PI * 1.5, 40, color_value, 3)
+		for i in range(16):
+			var spark := center + Vector2.from_angle(animation_clock * 2 + i * TAU/16) * (130 + sin(animation_clock*4+i)*35)
+			draw_circle(spark, 3, color_value)
+			draw_line(spark, spark - Vector2.from_angle(animation_clock * 2 + i * TAU/16) * 24, color_value, 2)
 	if slash_time > 0:
 		var angle := facing.angle()
-		draw_arc(Vector2(640,410), 85, angle - 0.85, angle + 0.85, 24, Color("f9e5b2"), 8)
-		draw_arc(Vector2(640,410), 100, angle - 0.6, angle + 0.6, 20, Color("91e8d3"), 3)
+		draw_arc(center, 85, angle - 0.85, angle + 0.85, 24, Color("f9e5b2"), 8)
+		draw_arc(center, 100, angle - 0.6, angle + 0.6, 20, Color("91e8d3"), 3)
 	if hurt_time > 0: draw_rect(Rect2(0,0,1280,800), Color(0.8,0.15,0.12,hurt_time * 0.32))
-	if invincible <= 0 or int(elapsed * 12) % 2 == 0: draw_hero(Vector2(640, 410), 1)
-	draw_rect(Rect2(25, 106, 400, 7), Color("294743"))
-	draw_rect(Rect2(25, 106, 400 * minf(1, xp / xp_needed), 7), Color("7ee8b1"))
+	if invincible <= 0 or int(elapsed * 12) % 2 == 0: draw_hero(center, 1)
+	draw_rect(Rect2(25, 136, 400, 7), Color("294743"))
+	draw_rect(Rect2(25, 136, 400 * minf(1, xp / xp_needed), 7), Color("7ee8b1"))
 
 func draw_hero(p: Vector2, scale_value: float) -> void:
+	var walking := movement.length() > 0 and state == "playing"
+	var stride := sin(animation_clock * 13) * (5 if walking else 0)
+	var bob := absf(sin(animation_clock * 13)) * 3 if walking else sin(animation_clock * 2.5) * 1.2
+	if state == "menu": bob = sin(Time.get_ticks_msec() * 0.002) * 1.5
+	p += Vector2(0, -bob * scale_value)
+	if slash_time > 0: p += facing * sin(slash_time / 0.18 * PI) * 9 * scale_value
+	if cast_time > 0: p.y -= sin(cast_time * 8) * 4 * scale_value
 	draw_circle(p + Vector2(0, 26 * scale_value), 22 * scale_value, Color(0,0,0,0.25))
 	if custom:
 		var poses := art.pose_names()
 		var pose: String = str(poses[0])
-		if "Walk" in poses and movement.length() > 0: pose = "Walk"
+		if "Walk" in poses and walking: pose = "Walk"
+		if "Attack" in poses and slash_time > 0: pose = "Attack"
+		if "Skill" in poses and cast_time > 0: pose = "Skill"
+		if "Ultimate" in poses and ultimate_time > 0: pose = "Ultimate"
+		if "Hurt" in poses and hurt_time > 0: pose = "Hurt"
 		var texture: Texture2D = art.texture_for(pose, int(elapsed * clampf(float(art.profile.get("fps", 8)), 1, 30)))
 		if texture:
 			var dimensions := texture.get_size()
@@ -480,12 +547,12 @@ func draw_hero(p: Vector2, scale_value: float) -> void:
 			return
 	var s := scale_value
 	var species: String = HEROES[hero].species
-	draw_line(p + Vector2(11, 13) * s, p + Vector2(33, 0) * s, tint.darkened(0.2), 13 * s)
-	draw_rect(Rect2(p + Vector2(-13, 24)*s, Vector2(10, 16)*s), Color("101a29"))
-	draw_rect(Rect2(p + Vector2(3, 24)*s, Vector2(10, 16)*s), Color("101a29"))
+	draw_line(p + Vector2(11, 13) * s, p + Vector2(33, sin(animation_clock * 5) * 7) * s, tint.darkened(0.2), 13 * s)
+	draw_rect(Rect2(p + Vector2(-13, 24 + stride)*s, Vector2(10, 16)*s), Color("101a29"))
+	draw_rect(Rect2(p + Vector2(3, 24 - stride)*s, Vector2(10, 16)*s), Color("101a29"))
 	draw_rect(Rect2(p + Vector2(-20, -1)*s, Vector2(40, 30)*s), Color("426b66"))
-	draw_line(p + Vector2(-23, 3)*s, p + Vector2(-25, 20)*s, tint, 9*s)
-	draw_line(p + Vector2(23, 3)*s, p + Vector2(25, 20)*s, tint, 9*s)
+	draw_line(p + Vector2(-23, 3)*s, p + Vector2(-25, 20 - stride)*s, tint, 9*s)
+	draw_line(p + Vector2(23, 3)*s, p + Vector2(25, 20 + stride)*s, tint, 9*s)
 	draw_circle(p + Vector2(0, -18)*s, 23*s, tint)
 	# Cheek tufts, fluffy chest, hair fringe and contrasting ear tips.
 	for side in [-1, 1]:
@@ -508,6 +575,7 @@ func draw_hero(p: Vector2, scale_value: float) -> void:
 
 func draw_enemy(p: Vector2, enemy: Dictionary) -> void:
 	var s := 1.45 if enemy.elite else 1.0
+	p.y += sin(animation_clock * (8 if enemy.kind == 1 else 6) + float(enemy.pos.x) * 0.01) * (4 if enemy.kind == 1 else 2)
 	draw_circle(p + Vector2(0, 17)*s, 18*s, Color(0,0,0,0.24))
 	match int(enemy.kind):
 		0:
@@ -539,6 +607,7 @@ func basic_attack() -> bool:
 	if state != "playing" or attack_timer > 0: return false
 	attack_timer = attack_interval * 0.55
 	slash_time = 0.18
+	add_shake(2)
 	play_sound("slash")
 	for enemy in enemies:
 		var toward: Vector2 = enemy.pos - player
@@ -548,6 +617,7 @@ func basic_attack() -> bool:
 func weapon_attack() -> bool:
 	if state != "playing" or attack_timer > 0: return false
 	attack_timer = attack_interval
+	cast_time = 0.3
 	play_sound("weapon")
 	if weapon == 1: blade_time = 2.0
 	elif weapon == 0:
@@ -568,6 +638,8 @@ func dodge() -> bool:
 func slam() -> bool:
 	if state != "playing" or slam_cd > 0: return false
 	slam_cd = 5.0
+	cast_time = 0.4
+	add_shake(9)
 	play_sound("skill")
 	area_damage(190,damage*2.5,Color("e7b773"))
 	return true
@@ -576,7 +648,11 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if enemy.hp <= 0: return
 	enemy.hp -= amount
 	enemy.flash = 0.14
-	enemy.pos += (enemy.pos - player).normalized() * 17
+	add_shake(3.5)
+	var direction: Vector2 = (enemy.pos - player).normalized()
+	if direction == Vector2.ZERO: direction = facing
+	enemy.push = direction * (520 if not enemy.elite else 300)
+	ultimate_charge = minf(100, ultimate_charge + 0.8)
 	effects.append({"pos":enemy.pos,"radius":13.0,"color":Color("ffd09b"),"life":0.5,"damage":amount})
 	play_sound("hit")
 
@@ -611,3 +687,18 @@ func play_sound(name_value: String) -> void:
 			node.stream = sounds[name_value]
 			node.play()
 			return
+
+func use_ultimate() -> bool:
+	if state != "playing" or ultimate_charge < 100 or ultimate_time > 0: return false
+	ultimate_charge = 0
+	ultimate_time = 5.0
+	ultimate_tick = 0
+	cast_time = 0.6
+	add_shake(16)
+	invincible = maxf(invincible, 1.0)
+	play_sound("level")
+	if hero == 1: blade_time = 5.0
+	return true
+
+func add_shake(amount: float) -> void:
+	shake_strength = minf(18, maxf(shake_strength, amount))
