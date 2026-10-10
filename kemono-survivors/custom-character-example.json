@@ -1,0 +1,9 @@
+{
+  "name": "Your Kemono Hero",
+  "fps": 8,
+  "poses": {
+    "Standing": ["idle.png"],
+    "Walk": ["walk-01.png", "walk-02.png"]
+  },
+  "survivor": {"weapon": 0}
+}
