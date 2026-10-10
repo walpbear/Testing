@@ -136,3 +136,25 @@ function mod_sprite_get_texture(_s, _f) {
     var _index = variable_struct_exists(global.mod_sprite_frames, string(_s)) ? 0 : _f;
     return sprite_get_texture(_frame_sprite, _index);
 }
+
+// Decide animation length from logical dimensions rather than upscaled strip width.
+function mod_cowgirl_frame_count(_path, _probe) {
+    var _logical_w = 160;
+    var _logical_h = 168;
+    var _configured = 0;
+    var _config = filename_dir(_path) + "custom_data.futa";
+    if (file_exists(_config)) {
+        ini_open(_config);
+        _logical_w = ini_read_real("resolution", "reverse_cowgirl_logical_width", 160);
+        _logical_h = ini_read_real("resolution", "reverse_cowgirl_logical_height", 168);
+        _configured = ini_read_real("resolution", "reverse_cowgirl_frames", 0);
+        ini_close();
+    }
+    if (_configured == 5 || _configured == 7) return _configured;
+    // Separate-frame folders are counted by mod_add_custom_sprite itself.
+    if (file_exists(filename_change_ext(_path, "") + "/frame_00.png")) return 5;
+    var _height = sprite_get_height(_probe);
+    if (_height <= 0 || _logical_h <= 0 || _logical_w <= 0) return 5;
+    var _normalized_width = sprite_get_width(_probe) * _logical_h / _height;
+    return (_normalized_width > (5 * _logical_w) + 0.01) ? 7 : 5;
+}

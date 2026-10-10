@@ -102,3 +102,17 @@ mod_draw_sprite_ext(uhd,0,440,256,2,2,0,0xffffff,1);
 assert(Math.abs(sprites[draw[0]].w*draw[4]-320)<1e-9);
 assert(Math.abs(sprites[draw[0]].h*draw[5]-440)<1e-9);
 console.log('PASS: 3840x2160 individual frames preserve explicit logical canvas dimensions.');
+
+metadata={};
+for (const factor of [1,2,4,24,25.6]) {
+ sprites[500]={w:800*factor,h:168*factor,ox:0,oy:0};
+ assert.equal(mod_cowgirl_frame_count('/test/custom_reverse_cowgirl.png',500),5);
+ sprites[500]={w:1120*factor,h:168*factor,ox:0,oy:0};
+ assert.equal(mod_cowgirl_frame_count('/test/custom_reverse_cowgirl.png',500),7);
+}
+metadata={reverse_cowgirl_frames:5};
+sprites[500]={w:19200,h:2160,ox:0,oy:0};
+assert.equal(mod_cowgirl_frame_count('/test/custom_reverse_cowgirl.png',500),5);
+metadata={reverse_cowgirl_frames:7};
+assert.equal(mod_cowgirl_frame_count('/test/custom_reverse_cowgirl.png',500),7);
+console.log('PASS: five/seven-frame detection remains correct at 1x, 2x, 4x, 24x and 25.6x; explicit counts override arbitrary canvas aspect ratios.');
