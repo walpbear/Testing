@@ -1,0 +1,32 @@
+[sprite]
+origin_x="80.000000"
+origin_y="84.000000"
+xray_x="80.000000"
+xray_y="84.000000"
+[portrait]
+origin_x="64.000000"
+origin_y="64.000000"
+nipple_x="28.000000"
+nipple_y="56.000000"
+[stats]
+egg_r="255.000000"
+egg_g="244.000000"
+egg_b="205.000000"
+[info]
+name="Example"
+desc="A template you may use to create your own custom partner!"
+author="Aplove"
+[dialogue]
+intro_0="[INTRO #1]"
+intro_1="[INTRO #2]"
+sex_start_0="[SEX START]"
+sex_continue_0="[SEX CONTINUE]"
+sex_halfway_0="[SEX HALFWAY]"
+sex_orgasm_0="[ORGASM]"
+sex_after_0="[POST ORGASM]"
+sex_exhausted_0="[EXHAUSTED]"
+cleanup_0="[CLEAN UP]"
+touch_boobs_0="[TOUCH BOOBS]"
+moan_0="[MOAN]"
+kiss_0="[KISS]"
+headpat_0="[HEADPAT]"
