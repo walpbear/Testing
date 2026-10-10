@@ -9,7 +9,9 @@ func run() -> void:
 	game.start_run()
 	game.spawn_enabled = false
 	for i in range(35): game.spawn_enemy(i%3, Vector2.from_angle(i * 0.6) * (120 + i * 14))
-	await create_timer(1).timeout
+	game.basic_attack()
+	game.slam()
+	await process_frame
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png("/workspace/kemono-build/game.png")
 	quit()

@@ -13,20 +13,37 @@ func run() -> void:
 	root.add_child(game)
 	await process_frame
 	game.set_process(false)
+	game.sound_enabled = false
 	check(game.state == "menu", "menu starts")
+	check(game.sounds.size() == 8 and game.sounds.hit.data.size() > 4000, "generated effect audio")
 	for index in range(4):
 		game.select_hero(index)
 		game.start_run()
 		check(game.weapon == index and game.hp == game.HEROES[index].hp, "hero loadout")
 		game.spawn_enabled = false
 		game.spawn_enemy(0, Vector2(90, 0))
-		game.auto_attack()
-		for i in range(90): game.step_world(0.016)
+		game.facing = Vector2.RIGHT
+		game.weapon_attack()
+		for i in range(120):
+			game.weapon_attack()
+			game.step_world(0.016)
 		check(game.kills > 0, "weapon kills enemy %d" % index)
 		check(game.use_skill(), "skill activates")
 		check(not game.use_skill(), "skill cooldown")
 	game.start_run()
 	game.spawn_enabled = false
+	game.spawn_enemy(2, Vector2(80, 0))
+	game.step_world(0.1)
+	check(game.bolts.is_empty() and game.enemies[0].hp == game.enemies[0].max_hp, "no automatic attacks")
+	game.facing = Vector2.RIGHT
+	check(game.basic_attack(), "manual slash")
+	check(game.enemies[0].hp < game.enemies[0].max_hp and game.enemies[0].flash > 0, "hit reaction")
+	check(not game.basic_attack(), "attack cooldown")
+	check(game.dodge() and not game.dodge(), "dodge cooldown")
+	check(game.slam() and not game.slam(), "slam cooldown")
+	game.player = Vector2.ZERO
+	game.enemies.clear()
+	game.invincible = 0
 	game.spawn_enemy(2, Vector2.ZERO)
 	game.step_world(0.01)
 	check(game.hp < game.max_hp, "contact damage")

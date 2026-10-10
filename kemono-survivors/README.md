@@ -1,10 +1,10 @@
 # Kemono Survivors
 
-An original standalone endless survival action game made with Godot 4.6.3. Four clothed kemono heroes fight zombies, slimes, skeletons, and stronger elite variants in a scrolling graveyard. Auto attacks, crystals, randomized level-up choices, scaling enemy difficulty, active skills, death/retry, and saved best score are included. There is no fixed victory timer.
+An original standalone endless survival action game made with Godot 4.6.3. Four clothed kemono heroes fight zombies, slimes, skeletons, and stronger elite variants in a scrolling graveyard. Manual aimed melee and weapon attacks, dodging, area slam, hit flashes, knockback, damage numbers, synthesized effect sounds, crystals, randomized level-up choices, scaling enemy difficulty, active skills, death/retry, and saved best score are included. There is no fixed victory timer.
 
 ## Windows
 
-Extract `kemono-survivors-windows.zip` and run `KemonoSurvivors.exe`. The game is self-contained; no data.win or previous game files are required. WASD/arrows move, Space activates your character's ability, Esc pauses, F11 toggles fullscreen. Attacks target enemies automatically. Pick up green crystals to level up and choose one of three random upgrades.
+Extract `kemono-survivors-windows.zip` and run `KemonoSurvivors.exe`. The game is self-contained; no data.win or previous game files are required. WASD/arrows move; aim with the mouse. Left click or J slashes in front of you; right click or K uses your selected weapon. Q activates your hero ability, Space dodges, E performs an area slam, Esc pauses, F11 toggles fullscreen. Hold an attack button to repeat attacks when its cooldown expires. No attacks fire without input. Lightning targets nearby enemies; other attacks use your aim or an area around you. Dodging briefly grants invulnerability. Abilities have separate cooldowns shown in the HUD. Pick up green crystals to level up and choose one of three random upgrades.
 
 ## Characters and customization
 
@@ -33,4 +33,4 @@ XDG_DATA_HOME=/workspace/tools/godot-data XDG_CACHE_HOME=/workspace/tools/godot-
 
 Run `godot --headless --path kemono-survivors --script res://tests/smoke.gd` for functional combat, loadouts, upgrades, death/retry, persistence, a real 4096×4096 PNG import, and bounded long-running simulation. Export with `godot --headless --path kemono-survivors --export-release "Windows Desktop" /absolute/output/KemonoSurvivors.exe`; installed Godot 4.6.3 export templates are required. Windows and Linux presets embed the PCK in the executable. Generated outputs belong outside the checkout or under ignored `build/`.
 
-Validated on Linux, including graphical rendering and an exported Linux startup. The Windows executable was exported successfully but has not been executed on Windows here. This is a first playable release with procedural original artwork; it has no audio, controller support, multiplayer, or commercial-scale balance/content.
+Validated on Linux with 36 functional checks, graphical rendering, and an exported Linux startup. The graphical test can report retained audio objects when it quits immediately after playing effects; functional tests finish cleanly. The Windows executable was exported successfully but has not been executed on Windows here. This is a playable hack-and-slash release with procedural original artwork; it has no controller support, multiplayer, or commercial-scale balance/content.
