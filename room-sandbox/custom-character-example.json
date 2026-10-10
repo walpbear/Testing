@@ -1,0 +1,9 @@
+{
+  "name": "Your character",
+  "fps": 6,
+  "poses": {
+    "Standing": ["standing/frame_00.png", "standing/frame_01.png"],
+    "Sitting": ["sitting/frame_00.png"],
+    "Waving": ["waving/frame_00.png", "waving/frame_01.png"]
+  }
+}
