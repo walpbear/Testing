@@ -6,22 +6,34 @@ function mod_sprite_resolution(_sprite) {
     return 1;
 }
 function mod_register_sprite_resolution(_sprite, _path, _ox, _oy) {
-    var _file = filename_name(_path);
+    // Normalize paths ourselves: avoid relying on filename helpers for detection.
+    var _path_normalized = string_lower(string_replace_all(_path, "\\", "/"));
     var _base = 0;
-    switch (_file) {
-        case "custom_portrait.png": case "custom_portrait_alt.png": _base = 128; break;
-        case "custom_mating_press.png": case "custom_mating_press_alt.png":
-        case "custom_reverse_cowgirl.png": case "custom_reverse_cowgirl_alt.png":
-        case "custom_deepthroat.png": case "custom_deepthroat_alt.png":
-        case "custom_condom.png": case "custom_condom_broken.png":
-        case "custom_xray.png": case "custom_xray_alt.png":
-        case "custom_xray_broken.png": _base = 160; break;
+    var _key = "";
+    var _names = ["portrait", "portrait_alt", "mating_press", "mating_press_alt",
+        "reverse_cowgirl", "reverse_cowgirl_alt", "deepthroat", "deepthroat_alt",
+        "condom", "condom_broken", "xray", "xray_alt", "xray_broken"];
+    for (var _i = 0; _i < array_length(_names); _i++) {
+        if (string_pos("/custom_" + _names[_i] + ".png", "/" + _path_normalized) > 0) {
+            _key = _names[_i];
+            _base = (_key == "portrait" || _key == "portrait_alt") ? 128 : 160;
+            break;
+        }
     }
     var _scale = 1;
     if (_base > 0) {
         var _ratio = sprite_get_width(_sprite) / _base;
         if (_ratio >= 1 && abs(_ratio - round(_ratio)) < 0.0001)
             _scale = round(_ratio);
+        // Explicit per-sheet settings take precedence over inference.
+        var _config = filename_dir(_path) + "custom_data.futa";
+        if (!file_exists(_config)) _config = filename_dir(_path) + "custom_data.spouse";
+        if (file_exists(_config)) {
+            ini_open(_config);
+            var _configured = ini_read_real("resolution", _key, _scale);
+            ini_close();
+            if (_configured >= 1 && _configured <= 8) _scale = _configured;
+        }
     }
     variable_struct_set(global.mod_sprite_resolutions, string(_sprite), _scale);
     sprite_set_offset(_sprite, _ox * _scale, _oy * _scale);
