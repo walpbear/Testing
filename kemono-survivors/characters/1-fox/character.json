@@ -1,0 +1,18 @@
+{
+  "name": "Rowan Custom",
+  "class": 0,
+  "species": "fox",
+  "color": "ed9855",
+  "weapon": 0,
+  "hp": 100,
+  "speed": 220,
+  "damage": 22,
+  "attack_interval": 0.72,
+  "knockback": 1,
+  "skill_cooldown": 9,
+  "slam_cooldown": 5,
+  "ultimate_charge_rate": 1.5,
+  "ultimate_duration": 5,
+  "sprite_size": 1,
+  "fps": 8
+}

@@ -1,12 +1,14 @@
 extends Node2D
 
 const Art = preload("res://scripts/custom_art.gd")
-const HEROES = [
+const DEFAULT_HEROES = [
 	{"name":"Rowan · Fox", "species":"fox", "color":"ed9855", "weapon":0, "speed":220.0, "hp":100.0, "lore":"EMBER SCOUT   /   Fire bolts + explosive burst"},
 	{"name":"Luna · Rabbit", "species":"rabbit", "color":"d5b7f2", "weapon":1, "speed":265.0, "hp":85.0, "lore":"MOON DANCER   /   Orbit blades + swift dash"},
 	{"name":"Kael · Wolf", "species":"wolf", "color":"8fc7d3", "weapon":2, "speed":195.0, "hp":130.0, "lore":"FROST WARDEN   /   Frost pulse + healing howl"},
 	{"name":"Yuki · Cat", "species":"cat", "color":"f1c679", "weapon":3, "speed":230.0, "hp":95.0, "lore":"STORM WEAVER   /   Lightning + thunder strike"}
 ]
+var HEROES: Array = DEFAULT_HEROES.duplicate(true)
+var mod_errors: Array[String] = []
 const WEAPONS = ["Ember bolts", "Orbit blades", "Frost pulse", "Lightning"]
 var hero := 0
 var weapon := 0
@@ -68,6 +70,7 @@ var sound_players: Array[AudioStreamPlayer] = []
 
 func _ready() -> void:
 	rng.randomize()
+	load_character_folders()
 	load_settings()
 	build_sounds()
 	build_ui()
@@ -116,7 +119,7 @@ func build_ui() -> void:
 	notice = label("", 16)
 	notice.position = Vector2(28, 754)
 	control.add_child(notice)
-	menu = panel_at(Rect2(650, 72, 570, 650))
+	menu = panel_at(Rect2(650, 52, 570, 680))
 	control.add_child(menu)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 13)
@@ -137,7 +140,7 @@ func build_ui() -> void:
 	color_picker.color_changed.connect(func(value): tint = value)
 	box.add_child(color_picker)
 	box.add_child(button("Import character PNG / JSON", func(): file_dialog.popup_centered_ratio(0.75)))
-	box.add_child(button("Use built-in character", func(): custom = false; select_hero(hero)))
+	box.add_child(button("Reload folder edits (F5)", reload_character_folders))
 	box.add_child(button("ENTER THE NIGHT", start_run))
 	box.add_child(label("WASD: move · Left click / J: slash\nRight click / K: weapon · Q: hero skill\nSpace: dodge · E: slam · R: ultimate · F8: shake · Esc: pause", 17))
 	box.add_child(button("Quit", func(): get_tree().quit()))
@@ -153,14 +156,18 @@ func build_ui() -> void:
 	select_hero(hero)
 
 func select_hero(index: int) -> void:
-	hero = index
+	hero = clampi(index, 0, HEROES.size()-1)
+	custom = false
+	var manifest: String = str(HEROES[hero].get("manifest", ""))
+	if manifest != "" and HEROES[hero].has("poses"):
+		custom = art.open(manifest)
 	if is_instance_valid(hero_select): hero_select.select(hero)
 	weapon = int(HEROES[hero].weapon)
 	tint = Color(HEROES[hero].color)
 	if is_instance_valid(weapon_select):
 		weapon_select.select(weapon)
 		color_picker.color = tint
-		notice.text = HEROES[hero].lore
+		notice.text = str(HEROES[hero].lore) + (" · " + art.last_error if manifest != "" and HEROES[hero].has("poses") and not custom else "")
 
 func import_character(path: String) -> bool:
 	if not art.open(path):
@@ -184,8 +191,8 @@ func start_run() -> void:
 	player = Vector2.ZERO
 	max_hp = float(HEROES[hero].hp)
 	speed = float(HEROES[hero].speed)
-	damage = 22.0
-	attack_interval = 0.72
+	damage = character_number("damage",22,1,500)
+	attack_interval = character_number("attack_interval",0.72,0.1,5)
 	hp = max_hp
 	elapsed = 0
 	kills = 0
@@ -221,6 +228,7 @@ func start_run() -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo: return
+	if event.keycode == KEY_F5 and state == "menu": reload_character_folders()
 	if event.keycode == KEY_F8: shake_enabled = not shake_enabled
 	if event.keycode == KEY_F11:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN)
@@ -256,20 +264,20 @@ func step_world(dt: float) -> void:
 	shake_strength = maxf(0, shake_strength - dt * 32)
 	shake_offset = Vector2(rng.randf_range(-1,1), rng.randf_range(-1,1)) * shake_strength if shake_enabled else Vector2.ZERO
 	cast_time = maxf(0, cast_time - dt)
-	ultimate_charge = minf(100, ultimate_charge + dt * 1.5)
+	ultimate_charge = minf(100, ultimate_charge + dt * character_number("ultimate_charge_rate",1.5,0,50))
 	if ultimate_time > 0:
 		ultimate_time = maxf(0, ultimate_time - dt)
 		ultimate_tick -= dt
 		if ultimate_tick <= 0:
 			ultimate_tick = 0.5
 			add_shake(10)
-			var radius: float = [360, 260, 320, 550][hero]
-			area_damage(radius, damage * [2.2, 2.0, 1.6, 2.5][hero], Color(HEROES[hero].color))
-			if hero == 2:
+			var radius: float = [360, 260, 320, 550][hero_class()]
+			area_damage(radius, damage * [2.2, 2.0, 1.6, 2.5][hero_class()], Color(HEROES[hero].color))
+			if hero_class() == 2:
 				hp = minf(max_hp, hp + max_hp * 0.06)
 				for enemy in enemies:
 					if player.distance_to(enemy.pos) < radius: enemy.slow = 1.5
-	player += movement * speed * (1.5 if ultimate_time > 0 and hero == 1 else 1.0) * dt
+	player += movement * speed * (1.5 if ultimate_time > 0 and hero_class() == 1 else 1.0) * dt
 	invincible = maxf(0, invincible - dt)
 	skill_cooldown = maxf(0, skill_cooldown - dt)
 	attack_timer = maxf(0, attack_timer - dt)
@@ -337,7 +345,7 @@ func step_world(dt: float) -> void:
 	hud.text = "HP %d / %d     LEVEL %d     XP %d / %d     %02d:%02d     KILLS %d\n%s   ·   Skill %s" % [maxi(0, int(hp)), int(max_hp), level, int(xp), int(xp_needed), int(elapsed)/60, int(elapsed)%60, kills, WEAPONS[weapon], "READY" if skill_cooldown <= 0 else "%ds" % int(ceil(skill_cooldown))]
 	hud.text += "   Dodge: %s   Slam: %s" % ["READY" if dodge_cd <= 0 else "%.1fs" % dodge_cd, "READY" if slam_cd <= 0 else "%.1fs" % slam_cd]
 
-	hud.text += "\nR: %s  %s" % [ULTIMATES[hero], "ACTIVE" if ultimate_time > 0 else ("READY" if ultimate_charge >= 100 else "%d%%" % int(ultimate_charge))]
+	hud.text += "\nR: %s  %s" % [ULTIMATES[hero_class()], "ACTIVE" if ultimate_time > 0 else ("READY" if ultimate_charge >= 100 else "%d%%" % int(ultimate_charge))]
 
 func spawn_enemy(kind := -1, at := Vector2.INF) -> void:
 	if enemies.size() >= 220: return
@@ -393,8 +401,8 @@ func use_skill() -> bool:
 	cast_time = 0.4
 	add_shake(9)
 	play_sound("skill")
-	skill_cooldown = [9.0, 5.0, 12.0, 10.0][hero]
-	match hero:
+	skill_cooldown = character_number("skill_cooldown",[9.0, 5.0, 12.0, 10.0][hero_class()],0.1,120)
+	match hero_class():
 		0: area_damage(280, damage * 4, Color("ff9765"))
 		1:
 			player += (movement if movement.length() > 0 else Vector2.RIGHT) * 190
@@ -454,7 +462,7 @@ func load_settings() -> void:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string("user://survivors-save.json"))
 	if parsed is Dictionary:
 		best = maxi(0, int(parsed.get("best", 0)))
-		hero = clampi(int(parsed.get("hero", 0)), 0, 3)
+		hero = clampi(int(parsed.get("hero", 0)), 0, HEROES.size()-1)
 
 func screen_pos(world: Vector2) -> Vector2:
 	return world - player + Vector2(640, 410) + shake_offset
@@ -540,7 +548,7 @@ func draw_hero(p: Vector2, scale_value: float) -> void:
 		var texture: Texture2D = art.texture_for(pose, int(elapsed * clampf(float(art.profile.get("fps", 8)), 1, 30)))
 		if texture:
 			var dimensions := texture.get_size()
-			var fit := Vector2(76, 90) * scale_value
+			var fit := Vector2(76, 90) * scale_value * character_number("sprite_size",1,0.25,3)
 			var ratio := minf(fit.x / dimensions.x, fit.y / dimensions.y)
 			var size_value := dimensions * ratio
 			draw_texture_rect(texture, Rect2(p + Vector2(0, 8 * scale_value) - size_value / 2, size_value), false)
@@ -637,7 +645,7 @@ func dodge() -> bool:
 
 func slam() -> bool:
 	if state != "playing" or slam_cd > 0: return false
-	slam_cd = 5.0
+	slam_cd = character_number("slam_cooldown",5,0.1,120)
 	cast_time = 0.4
 	add_shake(9)
 	play_sound("skill")
@@ -651,7 +659,7 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	add_shake(3.5)
 	var direction: Vector2 = (enemy.pos - player).normalized()
 	if direction == Vector2.ZERO: direction = facing
-	enemy.push = direction * (520 if not enemy.elite else 300)
+	enemy.push = direction * (520 if not enemy.elite else 300) * character_number("knockback",1,0,5)
 	ultimate_charge = minf(100, ultimate_charge + 0.8)
 	effects.append({"pos":enemy.pos,"radius":13.0,"color":Color("ffd09b"),"life":0.5,"damage":amount})
 	play_sound("hit")
@@ -691,14 +699,72 @@ func play_sound(name_value: String) -> void:
 func use_ultimate() -> bool:
 	if state != "playing" or ultimate_charge < 100 or ultimate_time > 0: return false
 	ultimate_charge = 0
-	ultimate_time = 5.0
+	ultimate_time = character_number("ultimate_duration",5,1,30)
 	ultimate_tick = 0
 	cast_time = 0.6
 	add_shake(16)
 	invincible = maxf(invincible, 1.0)
 	play_sound("level")
-	if hero == 1: blade_time = 5.0
+	if hero_class() == 1: blade_time = ultimate_time
 	return true
 
 func add_shake(amount: float) -> void:
 	shake_strength = minf(18, maxf(shake_strength, amount))
+
+func hero_class() -> int:
+	return clampi(int(HEROES[hero].get("class", mini(hero,3))),0,3)
+
+func character_number(key: String, fallback: float, low: float, high: float) -> float:
+	var value: Variant = HEROES[hero].get(key, fallback)
+	if not (value is float or value is int) or not is_finite(float(value)): return fallback
+	return clampf(float(value),low,high)
+
+func character_folder() -> String:
+	if OS.has_feature("editor"): return ProjectSettings.globalize_path("res://characters")
+	return OS.get_executable_path().get_base_dir().path_join("characters")
+
+func load_character_folders(root_override := "") -> void:
+	HEROES = DEFAULT_HEROES.duplicate(true)
+	mod_errors.clear()
+	var root_folder := character_folder() if root_override == "" else root_override
+	var directory := DirAccess.open(root_folder)
+	if not directory: return
+	var folders := directory.get_directories()
+	folders.sort()
+	for folder in folders:
+		var path := root_folder.path_join(folder).path_join("character.json")
+		if not FileAccess.file_exists(path): continue
+		var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if not data is Dictionary:
+			mod_errors.append(folder + ": invalid JSON")
+			continue
+		var class_value: Variant = data.get("class", 0)
+		if not (class_value is int or class_value is float):
+			mod_errors.append(folder + ": class must be 0, 1, 2 or 3")
+			continue
+		var class_index := clampi(int(class_value),0,3)
+		var entry: Dictionary = DEFAULT_HEROES[class_index].duplicate(true)
+		entry.merge(data,true)
+		entry["class"] = class_index
+		entry["manifest"] = path
+		entry["name"] = str(entry.name).substr(0,60)
+		entry["species"] = str(entry.get("species","fox"))
+		entry["weapon"] = clampi(int(entry.get("weapon",class_index)),0,3) if (entry.get("weapon") is float or entry.get("weapon") is int) else class_index
+		entry["color"] = str(entry.get("color",DEFAULT_HEROES[class_index].color))
+		if not Color.html_is_valid(entry.color): entry.color = DEFAULT_HEROES[class_index].color
+		for spec in [["hp",20.0,2000.0],["speed",50.0,800.0]]:
+			var value: Variant = entry.get(spec[0],DEFAULT_HEROES[class_index][spec[0]])
+			entry[spec[0]] = clampf(float(value),spec[1],spec[2]) if (value is int or value is float) and is_finite(float(value)) else DEFAULT_HEROES[class_index][spec[0]]
+		HEROES.append(entry)
+
+func reload_character_folders() -> void:
+	if state != "menu": return
+	var previous_name: String = HEROES[hero].name
+	load_character_folders()
+	hero_select.clear()
+	var selected := 0
+	for i in HEROES.size():
+		hero_select.add_item(HEROES[i].name)
+		if HEROES[i].name == previous_name: selected = i
+	select_hero(selected)
+	notice.text = "Reloaded %d character folders. %s" % [HEROES.size()-4, "Ready to test." if mod_errors.is_empty() else "; ".join(mod_errors)]

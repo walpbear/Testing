@@ -1,0 +1,56 @@
+EASY CHARACTER EDITING
+
+1. Close your run and return to camp.
+2. Open a character folder below this folder.
+3. Right-click character.json, choose Open with > Notepad.
+4. Change a value, save, then click Reload folder edits (or F5) at camp.
+5. Select that custom character in the dropdown and start a new run.
+
+Create another character by copying any whole folder and changing its name
+inside character.json. Built-in heroes always remain available. The game reads
+these folders beside KemonoSurvivors.exe, not inside the executable. Keep the
+characters folder next to the EXE. No recompilation or data.win editing needed.
+
+Settings (keep JSON commas, quotes, and braces):
+name                 Display name.
+class                Skill + ultimate set: 0 fox, 1 rabbit, 2 wolf, 3 cat.
+weapon               Starting weapon: 0 ember, 1 blades, 2 frost, 3 lightning.
+species              Built-in art: fox / rabbit / wolf / cat.
+color                Fur color as six-digit hex, e.g. ff8855.
+hp                   Starting health (20-2000).
+speed                Movement speed (50-800).
+damage               Base attack damage (1-500).
+attack_interval      Seconds between weapon attacks (0.1-5); lower is faster.
+knockback            Strength multiplier (0-5); 2 doubles current knockback.
+skill_cooldown       Q ability cooldown in seconds (0.1-120).
+slam_cooldown        E cooldown in seconds (0.1-120).
+ultimate_charge_rate Passive ultimate charge per second (0-50).
+ultimate_duration    Ultimate duration in seconds (1-30).
+sprite_size          Imported artwork display-size multiplier (0.25-3).
+fps                  Animation frame rate (1-30).
+
+CUSTOM PNG ART AND ANIMATIONS
+Put your separate transparent PNG frames inside the character's folder.
+Add a comma after the fps value, then add this block before the closing brace:
+
+  "poses": {
+    "Standing": ["idle.png"],
+    "Walk": ["walk-01.png", "walk-02.png"],
+    "Attack": ["attack-01.png", "attack-02.png"],
+    "Skill": ["cast-01.png", "cast-02.png"],
+    "Ultimate": ["ultimate-01.png", "ultimate-02.png"],
+    "Hurt": ["hurt.png"]
+  }
+
+Use only animations you have images for; remove unused pose lines and preserve
+valid commas. Paths are relative to character.json. Keep frames centered on
+matching canvases. Individual 4K frames work and scale to the gameplay box.
+This replaces the whole drawn character, not individual body parts. Animation
+frames loop during the relevant action. Missing action poses use idle/walk.
+Without a poses block the game draws a built-in kemono character instead.
+
+Examples: set knockback to 2, damage to 40, or ultimate_duration to 8.
+Skill selection uses the four existing classes; new scripted abilities and
+changes to arena/enemy logic require editing the Godot source project.
+Invalid JSON folders are skipped with a message on reload. Invalid/missing
+art falls back to a built-in character with an error message on selection.

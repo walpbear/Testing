@@ -107,6 +107,32 @@ func run() -> void:
 	game.best = 0
 	game.load_settings()
 	check(game.best == 42, "save reload")
+	var mods_path := ProjectSettings.globalize_path("user://mod-test")
+	DirAccess.make_dir_recursive_absolute(mods_path.path_join("test-hero"))
+	var config_file := FileAccess.open(mods_path.path_join("test-hero/character.json"), FileAccess.WRITE)
+	config_file.store_string(JSON.stringify({"name":"Test mod","class":2,"hp":320,"speed":350,"damage":85,"knockback":2,"ultimate_duration":9,"skill_cooldown":3}))
+	config_file.close()
+	game.load_character_folders(mods_path)
+	check(game.HEROES.size() == 5, "folder discovered")
+	game.hero_select.add_item("Test mod")
+	game.select_hero(4)
+	game.start_run()
+	check(game.hp == 320 and game.damage == 85 and game.speed == 350, "folder stats applied")
+	check(game.hero_class() == 2, "folder skill class")
+	game.use_skill()
+	check(game.skill_cooldown == 3, "editable skill cooldown")
+	game.ultimate_charge = 100
+	game.use_ultimate()
+	check(game.ultimate_time == 9, "editable ultimate duration")
+	game.HEROES[4].knockback = 999
+	check(game.character_number("knockback",1,0,5) == 5, "settings clamped")
+	game.load_character_folders()
+	game.hero_select.clear()
+	for h in game.HEROES: game.hero_select.add_item(h.name)
+	game.select_hero(0)
+	game.show_menu()
+	game.reload_character_folders()
+	check(game.HEROES.size() >= 4 and game.state == "menu", "reload at camp")
 	game.start_run()
 	game.spawn_enabled = true
 	for i in range(18000):
