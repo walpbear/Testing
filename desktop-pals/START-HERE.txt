@@ -6,6 +6,11 @@ WINDOWS START
 3. The first launch downloads a verified official runtime, about 151 MiB.
 4. Keep the folder and use the same CMD file to reopen the app later.
 
+SHIMEJI BEHAVIOR: pets walk, sit, jump, climb screen edges and fall when dropped.
+Right-click a pet for its menu. Controls start hidden; use Ctrl+Shift+P or the
+small DeskFur button to open them. Disable Shimeji-style movement for classic
+wandering. Pets climb screen edges, not other programs' window borders.
+
 MY PET: drag, feed, pet, sleep, change expression, ask the time, and turn on Duo
 mode. Ctrl+Shift+P or the tray menu restores hidden controls. Quiet mode mutes
 sounds. Your primary pet can be customized; the extra companion is local.
@@ -36,7 +41,8 @@ The friend accepts before play. Shared dice support D4 through D100 and modifier
 Dice also work offline. Messages are delivered while users are in the room.
 
 TEST STATUS
-52 automated checks passed (13 sprite/import, 26 relay, 13 browser/UI), plus a
+77 automated checks passed, covering sprite/import, Shimeji physics, relay messages,
+multiplayer games, and browser/UI interactions. Validation also includes a
 native Linux Electron check of the packaged app. Windows runtime download was
 verified, but the Windows launcher, transparency and click-through need testing
 on a Windows PC. Internet relay deployment is still a user setup step.

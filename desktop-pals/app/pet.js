@@ -4,25 +4,32 @@ window.PetArt = (()=>{
  function ellipse(c,x,y,rx,ry,color){c.fillStyle=color;c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fill();}
  function poly(c,points,color){c.fillStyle=color;c.beginPath();points.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.closePath();c.fill();}
  function draw(c,pet,x,y,size,time,image){
+  const pose=pet.pose||pet.behavior||'idle';
   const behavior=pet.behavior||'idle', walking=behavior==='walk',sleep=behavior==='sleep',play=behavior==='play';
   const bob=walking?Math.abs(Math.sin(time*10))*4:Math.sin(time*2)*1.5;
   c.save();c.translate(x,y);c.scale(size/128,size/128);
   ellipse(c,0,1,38,6,'#25392e22');
   c.scale(pet.facing||1,1);
+  if(pose==='sit'||sleep)c.scale(1.06,.8);
+  if(pose==='drag')c.rotate(Math.sin(time*9)*.10);
+  if(pose==='land')c.scale(1.15,.84);
+  if(pose==='fall')c.rotate(Math.sin(time*5)*.04);
   if(image&&image.complete&&image.naturalWidth){
-   const s=pet.sprite, sequence=s.animations[pet.action]||s.animations[pet.expression]||s.animations[behavior]||s.animations.idle, index=sequence[Math.floor(time*s.fps)%sequence.length];
+   const s=pet.sprite, special=!['idle','walk','sleep','play'].includes(pose), fallback={sit:'idle',climb:'walk',hang:'idle',fall:'play',jump:'play',drag:'play',land:'idle'}[pose]||behavior;
+   const sequence=s.animations[pet.action]||(special?s.animations[pose]:null)||s.animations[pet.expression]||s.animations[fallback]||s.animations.idle, index=sequence[Math.floor(time*s.fps)%sequence.length];
    const columns=Math.floor(image.naturalWidth/s.frameWidth),fw=s.frameWidth,fh=s.frameHeight;
    const fit=Math.min(112/fw,125/fh),w=fw*fit,h=fh*fit;
    c.imageSmoothingEnabled=false;c.drawImage(image,(index%columns)*fw,Math.floor(index/columns)*fh,fw,fh,-w/2,-h-bob,w,h);c.restore();return;
   }
   const [fur,dark,blue]=palettes[pet.skin]||palettes.cream;
   const stride=walking?Math.sin(time*10)*5:0;
-  c.translate(0,-bob+(sleep?16:0));
+  c.translate(0,-bob);
   // Fluffy tail sways behind the character.
   c.save();c.translate(21,-29);c.rotate(Math.sin(time*2.2)*.15+(sleep?.7:0));ellipse(c,17,-15,18,35,fur);poly(c,[[8,-48],[22,-58],[20,-44],[33,-51],[29,-33],[37,-38],[31,-20],[9,-21]],fur);ellipse(c,18,-40,15,13,dark);c.restore();
   ellipse(c,-12,-10+stride,10,13,dark);ellipse(c,12,-10-stride,10,13,dark);
   ellipse(c,0,-38,23,29,fur);
-  ellipse(c,-25,-40-stride,9,19,dark);ellipse(c,25,-42+(play?-15:stride),9,19,dark);
+  const reaching=['climb','hang','drag'].includes(pose),airborne=['fall','jump'].includes(pose);
+  if(reaching){ellipse(c,-24,-89+Math.sin(time*9)*5,9,21,dark);ellipse(c,24,-89-Math.sin(time*9)*5,9,21,dark);}else if(airborne){c.save();c.rotate(-.7);ellipse(c,-8,-51,9,20,dark);c.restore();c.save();c.rotate(.7);ellipse(c,8,-51,9,20,dark);c.restore();}else{ellipse(c,-25,-40-stride,9,19,dark);ellipse(c,25,-42+(play?-15:stride),9,19,dark);}
   if(play){ellipse(c,25,-62,7,8,'#eaa9ae');ellipse(c,20,-70,2.5,3,'#eaa9ae');ellipse(c,27,-72,2.5,3,'#eaa9ae');}
   poly(c,[[-22,-53],[0,-40],[24,-54],[11,-66],[-12,-66]],dark);
   c.fillStyle='#6695bf';c.fillRect(-20,-56,7,29);poly(c,[[-20,-27],[-13,-27],[-12,-18],[-21,-21]],'#6695bf');
@@ -39,7 +46,7 @@ window.PetArt = (()=>{
   if(pet.expression==='sad'){ellipse(c,-20,-75,2,4,'#93c8ed');ellipse(c,20,-75,2,4,'#93c8ed');}
   if(pet.action==='eat'){ellipse(c,24,-48,8,8,'#de6f6c');poly(c,[[24,-57],[28,-62],[31,-58]],'#72a67a');}
   if(pet.action==='pet'){c.fillStyle='#de899f';c.font='18px sans-serif';c.fillText('♡',20,-133-Math.sin(time*6)*4);}
-  poly(c,[[-4,-75],[4,-75],[0,-71]],'#72545b');if(pet.expression==='surprised')ellipse(c,0,-64,4,5,'#72545b');c.strokeStyle='#72545b';c.lineWidth=1.5;c.beginPath();c.moveTo(-7,-67);c.quadraticCurveTo(0,-61,7,-67);c.stroke();
+  poly(c,[[-4,-75],[4,-75],[0,-71]],'#72545b');if(pet.expression==='surprised'||['fall','drag','jump'].includes(pose))ellipse(c,0,-64,4,5,'#72545b');c.strokeStyle='#72545b';c.lineWidth=1.5;c.beginPath();c.moveTo(-7,-67);c.quadraticCurveTo(0,-61,7,-67);c.stroke();
   ellipse(c,-25,-72,5,2.4,'#edc1b7');ellipse(c,25,-72,5,2.4,'#edc1b7');
   c.restore();
  }

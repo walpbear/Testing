@@ -1,6 +1,6 @@
 {
   "name": "deskfur",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Customizable anthro desktop pets with shared rooms and mini-games",
   "main": "app/main.cjs",
   "author": "DeskFur contributors",

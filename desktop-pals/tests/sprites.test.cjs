@@ -144,6 +144,25 @@ test('preserves optional feed, pet, and expression animations through validation
   }
 });
 
+test('Shimeji motion animations survive import and export while remaining optional', async t => {
+  const folder = await fixture(t);
+  const poses = ['sit', 'climb', 'hang', 'fall', 'jump', 'drag', 'land'];
+  const animations = { idle: [0], walk: [0, 1] };
+  for (const pose of poses) animations[pose] = [1, 0, 1];
+  const original = validateSprite(profile({ animations }));
+  const target = await exportSprite(original, path.join(folder, 'motion.json'));
+  const imported = await importSprite(target);
+  assert.deepEqual(imported, original);
+  for (const pose of poses) {
+    assert.deepEqual(imported.animations[pose], [1, 0, 1]);
+    assert.equal(Object.hasOwn(validateSprite(profile()).animations, pose), false);
+    for (const frames of [[], [-1], [2], Array(65).fill(0), '0,1']) {
+      assert.throws(() => validateSprite(profile({ animations: { idle: [0], [pose]: frames } })), /Sprite pack:/);
+    }
+  }
+  assert.throws(() => validateSprite(profile({ animations: { idle: [0], execute: [0] } })), /Supported animations/);
+});
+
 test('rejects corrupt PNG headers, checksums, scanlines, compression, and incomplete data', () => {
   const good = png();
   const corrupt = Buffer.from(good); corrupt[40] ^= 1;

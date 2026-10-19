@@ -6,13 +6,14 @@ import { WebSocket, WebSocketServer } from 'ws';
 
 export const SKINS = Object.freeze(['cream', 'fox', 'cat', 'wolf']);
 export const BEHAVIORS = Object.freeze(['idle', 'walk', 'sleep', 'play']);
+export const POSES = Object.freeze(['idle', 'walk', 'sit', 'climb', 'hang', 'fall', 'jump', 'drag', 'land', 'sleep', 'play']);
 export const EXPRESSIONS = Object.freeze(['neutral', 'happy', 'sad', 'surprised', 'sleepy', 'angry']);
 export const EMOTES = Object.freeze(['wave', 'heart', 'happy', 'sparkle', 'sleep', 'food', 'pet', 'time']);
-const SPRITE_ANIMATIONS = [...BEHAVIORS, 'eat', 'pet', 'happy', 'sad', 'surprised', 'angry'];
+const SPRITE_ANIMATIONS = [...POSES, 'eat', 'pet', 'happy', 'sad', 'surprised', 'angry'];
 const DICE_SIDES = [4, 6, 8, 10, 12, 20, 100];
 const MAX_SPRITE_BYTES = 2 * 1024 * 1024;
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const DEFAULT_STATE = Object.freeze({ x: 0.5, y: 0.65, behavior: 'idle', facing: 1, expression: 'neutral' });
+const DEFAULT_STATE = Object.freeze({ x: 0.5, y: 0.65, behavior: 'idle', pose: 'idle', facing: 1, expression: 'neutral' });
 const ownObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const cleanText = (value, max) => typeof value === 'string' && value.trim().length > 0
   && [...value.trim()].length <= max && !/[\u0000-\u001f\u007f]/u.test(value);
@@ -27,11 +28,12 @@ function validState(value) {
   return ownObject(value) && Number.isFinite(value.x) && value.x >= 0 && value.x <= 1
     && Number.isFinite(value.y) && value.y >= 0 && value.y <= 1
     && BEHAVIORS.includes(value.behavior) && [-1, 1].includes(value.facing)
+    && (value.pose === undefined || POSES.includes(value.pose))
     && (value.expression === undefined || EXPRESSIONS.includes(value.expression));
 }
 
 function publicState(value) {
-  return { x: value.x, y: value.y, behavior: value.behavior, facing: value.facing,
+  return { x: value.x, y: value.y, behavior: value.behavior, pose: value.pose ?? value.behavior, facing: value.facing,
     expression: value.expression ?? 'neutral' };
 }
 
@@ -42,7 +44,8 @@ function validatedSprite(value) {
     || !Number.isInteger(value.fps) || value.fps < 1 || value.fps > 24
     || !Number.isInteger(value.frameWidth) || value.frameWidth < 1 || value.frameWidth > 4096
     || !Number.isInteger(value.frameHeight) || value.frameHeight < 1 || value.frameHeight > 4096
-    || !ownObject(value.animations) || typeof value.image !== 'string') return null;
+    || !ownObject(value.animations) || typeof value.image !== 'string'
+    || Object.keys(value.animations).some(key => !SPRITE_ANIMATIONS.includes(key))) return null;
   const prefix = 'data:image/png;base64,';
   if (!value.image.startsWith(prefix)) return null;
   const encoded = value.image.slice(prefix.length);

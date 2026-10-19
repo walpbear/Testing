@@ -52,4 +52,12 @@ cd server
 npm test
 ```
 
-The renderer suite uses installed Chromium where available, or Playwright's browser install. Current validation:13 sprite/import tests,26 relay integration tests including actualTLS/WSS, and 13 browser/UI tests including two real app clients, shared movement/art/chat, a completed tic-tac-toe match and a synchronized die roll. Native Linux Electron startup, feeding, duo mode and hide/restore were exercised too. Windows-native transparency, click-through and the launcher remain to be checked on a Windows PC. Internet hosting has not been deployed or tested from two separate real-world networks.
+The renderer suite uses installed Chromium where available, or Playwright's browser install. Current validation: 77 automated tests (14 sprite/import, 15 screen-physics, 28 relay integration including actual TLS/WSS, and 20 browser/UI tests) including two real app clients, shared movement/art/chat, a completed tic-tac-toe match and a synchronized die roll. The packaged native Linux app was also checked for hidden startup, landing, right-click climbing and restoring controls. Windows-native transparency, click-through and the launcher remain to be checked on a Windows PC. Internet hosting has not been deployed or tested from two separate real-world networks.
+
+## Shimeji-style desktop behavior (0.2)
+
+Native desktop launches start with just the pets and a small restore button. Right-click your pet for walking, sitting, jumping, climbing the screen edge, following the cursor, feeding, petting, toggling a companion, or opening controls. Ctrl+Shift+P and the tray menu also restore controls. The app remembers whether you leave controls open or hidden.
+
+Shimeji-style movement is enabled by default. Pets fall to the bottom of the work area, walk and take random rests, climb the left/right screen edge, crawl along the top, then let go. Pick them up and release them to drop or gently toss them. Built-in artwork reacts to dragging, falling, climbing, hanging, sitting and landing. Speed zero stops autonomous walking/climbing; explicit jumps and gravity still work. Turn off **Shimeji-style movement** to restore classic wandering.
+
+The optional sprite fields `sit`, `climb`, `hang`, `fall`, `jump`, `drag`, and `land` supply matching frames; edit them under **Sprites → Shimeji poses** or in a JSON pack. Existing PNG packs fall back to their standard animations. Online pets share these poses through the included updated relay. Screen edges are supported; this version does not detect or climb other applications' window borders and does not move or close other windows. Original Shimeji XML behavior scripts are not imported.

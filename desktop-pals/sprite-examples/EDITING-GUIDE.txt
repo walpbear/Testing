@@ -20,7 +20,11 @@ Example settings:
     "sleep": [6, 7],
     "play": [8, 9, 10, 11],
     "happy": [8, 9, 10, 11],
-    "pet": [9, 10, 9, 8]
+    "pet": [9, 10, 9, 8],
+    "sit": [6, 7],
+    "jump": [8, 9],
+    "fall": [10],
+    "land": [11, 0]
   }
 }
 
@@ -44,11 +48,24 @@ head pats, smiles, sad ears, surprise, or angry faces, then list those frame
 numbers. Optional actions can be omitted: the app will use a base animation.
 The Mochi pack demonstrates happy and pet using its existing raised-paw frames.
 
+Desktop motion also supports these optional animation names:
+"sit", "climb", "hang", "fall", "jump", "drag", "land".
+Use sit for resting, climb for moving up a desktop edge, hang for holding onto
+the top edge, jump/fall for airborne motion, drag for being picked up, and land
+for touching down. Add the frame numbers for your own poses to the animations
+object. The example above reuses existing frames so it still works with Mochi's
+original sheet; draw dedicated poses for the best result.
+
+All motion animations are optional. Existing PNG and JSON packs still work:
+DeskFur falls back to a base animation when a dedicated pose is missing.
+Your friend's pet also receives the motion pose when both use the new app and
+an updated DeskFur relay. Older relays continue supporting the four base actions.
+
 Name: 1–48 characters. FPS: 1–24. Frame size: 1–4096 pixels per side.
 PNG: at most 4096 x 4096 pixels and 2 MiB. At most 256 cells per sheet and 64
 frame numbers per animation. Frame width/height must divide the image exactly.
 Base actions: idle, walk, sleep, play. Optional: eat, pet, happy, sad, surprised,
-angry. Use JSON plus a PNG sheet for animated
+angry, sit, climb, hang, fall, jump, drag, land. Use JSON plus a PNG sheet for animated
 pets; APNG, GIF, SVG, URLs, and scripts are not supported.
 
 The image filename must point inside the same folder or one of its subfolders.

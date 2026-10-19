@@ -70,7 +70,7 @@ test('real clients create private room, join, and exchange normalized state', as
   const joined = await join(b, created.code.toLowerCase());
   assert.equal(joined.code, created.code);
   assert.equal(joined.peers[0].id, created.id);
-  assert.deepEqual(joined.peers[0].state, state);
+  assert.deepEqual(joined.peers[0].state, { ...state, pose: state.behavior });
   assert.equal(joined.peers[0].sprite, null);
   const peerJoined = await a.next('peer_joined');
   assert.equal(peerJoined.peer.name, 'Mika');
@@ -544,5 +544,53 @@ test('sprite expression and interaction animations are preserved with bounded fr
   assert.deepEqual((await gameTable.b.next('sprite')).sprite.animations, value.animations);
   value.animations.happy = Array(65).fill(0);
   gameTable.a.send({ type: 'sprite', sprite: value });
+  assert.equal((await gameTable.a.next('error')).code, 'invalid_sprite');
+});
+
+test('Shimeji poses synchronize live and on joins while old clients inherit their behavior', async (t) => {
+  const gameTable = await table(t);
+  const { a, b, relay, code, host } = gameTable;
+  for (const pose of ['idle', 'walk', 'sit', 'climb', 'hang', 'fall', 'jump', 'drag', 'land', 'sleep', 'play']) {
+    a.send({ type: 'state', state: { ...state, pose } });
+    const update = await b.next('state');
+    assert.equal(update.id, host);
+    assert.equal(update.state.pose, pose);
+    assert.equal(update.state.behavior, state.behavior, 'a motion pose does not replace the base behavior');
+  }
+  a.send({ type: 'state', state: { ...state, pose: 'hang' } });
+  await b.next('state');
+  const c = await connect(t, relay);
+  assert.equal((await join(c, code, 'Third')).peers[0].state.pose, 'hang');
+  for (const behavior of ['idle', 'walk', 'sleep', 'play']) {
+    a.send({ type: 'state', state: { ...state, behavior } });
+    assert.equal((await b.next('state')).state.pose, behavior);
+  }
+  for (const pose of ['execute', '', null, 1, ['walk'], {}]) {
+    a.send({ type: 'state', state: { ...state, pose } });
+    assert.equal((await a.next('error')).code, 'invalid_state');
+  }
+  assert.equal(b.inbox.some(message => message.type === 'state'), false);
+  const legacy = await connect(t, relay);
+  legacy.send({ type: 'create', name: 'Legacy', skin: 'cream' });
+  const legacyRoom = await legacy.next('welcome');
+  const legacyGuest = await connect(t, relay);
+  assert.equal((await join(legacyGuest, legacyRoom.code)).peers[0].state.pose, 'idle');
+});
+
+test('Shimeji sprite animations are shared and bounded using the same animation whitelist', async (t) => {
+  const gameTable = await table(t, { spriteCooldownMs: 0 });
+  const value = sprite();
+  for (const key of ['sit', 'climb', 'hang', 'fall', 'jump', 'drag', 'land']) value.animations[key] = [0, 0];
+  gameTable.a.send({ type: 'sprite', sprite: value });
+  assert.deepEqual((await gameTable.b.next('sprite')).sprite.animations, value.animations);
+  const late = await connect(t, gameTable.relay);
+  assert.deepEqual((await join(late, gameTable.code)).peers[0].sprite.animations, value.animations);
+  for (const key of ['sit', 'climb', 'hang', 'fall', 'jump', 'drag', 'land']) {
+    for (const frames of [[], [1], [-1], Array(65).fill(0), '0']) {
+      gameTable.a.send({ type: 'sprite', sprite: { ...value, animations: { ...value.animations, [key]: frames } } });
+      assert.equal((await gameTable.a.next('error')).code, 'invalid_sprite');
+    }
+  }
+  gameTable.a.send({ type: 'sprite', sprite: { ...value, animations: { ...value.animations, execute: [0] } } });
   assert.equal((await gameTable.a.next('error')).code, 'invalid_sprite');
 });

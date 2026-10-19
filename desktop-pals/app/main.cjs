@@ -3,7 +3,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const { importSprite, exportSprite, validateSprite } = require('./sprites.cjs');
 let win, tray;
-const defaults = {name:'My pet',dual:false,fullness:70,bond:50,energy:80,expression:'neutral',skin:'cream',size:128,speed:42,volume:0.25,muted:false,relay:'',sprite:null,x:0.55,y:0.78};
+const defaults = {shimeji:true,startHidden:true,name:'My pet',dual:false,fullness:70,bond:50,energy:80,expression:'neutral',skin:'cream',size:128,speed:42,volume:0.25,muted:false,relay:'',sprite:null,x:0.55,y:0.78};
 let settings = {...defaults};
 const settingsFile = () => path.join(app.getPath('userData'),'settings.json');
 function cleanSettings(value) {
@@ -12,7 +12,7 @@ function cleanSettings(value) {
   if (typeof value.name === 'string') next.name = value.name.trim().slice(0,24) || 'My pet';
   if (['cream','fox','cat','wolf'].includes(value.skin)) next.skin=value.skin;
   for (const [key,min,max] of [['size',64,240],['speed',0,120],['volume',0,1],['fullness',0,100],['bond',0,100],['energy',0,100],['x',0,1],['y',0,1]]) if(Number.isFinite(value[key])) next[key]=Math.max(min,Math.min(max,value[key]));
-  for (const key of ['muted','dual']) if(typeof value[key]==='boolean') next[key]=value[key];
+  for (const key of ['muted','dual','shimeji','startHidden']) if(typeof value[key]==='boolean') next[key]=value[key];
   if(typeof value.relay==='string') next.relay=value.relay.slice(0,512);
   if(value.sprite===null) next.sprite=null;
   else if(value.sprite) next.sprite=validateSprite(value.sprite);

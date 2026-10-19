@@ -12,7 +12,8 @@ const MAX_MANIFEST_BYTES = 64 * 1024;
 const MAX_DIMENSION = 4096;
 const MAX_PIXELS = 4096 * 4096;
 const ANIMATIONS = ['idle', 'walk', 'sleep', 'play'];
-const OPTIONAL_ANIMATIONS = ['eat', 'pet', 'happy', 'sad', 'surprised', 'angry'];
+const OPTIONAL_ANIMATIONS = ['eat', 'pet', 'happy', 'sad', 'surprised', 'angry',
+  'sit', 'climb', 'hang', 'fall', 'jump', 'drag', 'land'];
 const ALLOWED_ANIMATIONS = [...ANIMATIONS, ...OPTIONAL_ANIMATIONS];
 const PREFIX = 'data:image/png;base64,';
 const SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -129,7 +130,9 @@ function normalize(sprite, buffer) {
   if (count > 256) fail('A sprite sheet can contain at most 256 frames.');
   const input = sprite.animations ?? { idle: [0] };
   if (!input || typeof input !== 'object' || Array.isArray(input)) fail('Animations must be an object.');
-  if (Object.keys(input).some(key => !ALLOWED_ANIMATIONS.includes(key))) fail('Supported animations are idle, walk, sleep, play, eat, pet, happy, sad, surprised, and angry.');
+  if (Object.keys(input).some(key => !ALLOWED_ANIMATIONS.includes(key))) {
+    fail(`Supported animations are ${ALLOWED_ANIMATIONS.join(', ')}.`);
+  }
   const animations = {};
   const idle = input.idle ?? [0];
   for (const key of [...ANIMATIONS, ...OPTIONAL_ANIMATIONS.filter(key => Object.hasOwn(input, key))]) {

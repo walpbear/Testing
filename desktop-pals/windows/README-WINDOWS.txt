@@ -15,9 +15,14 @@ use that local copy without downloading it. Every launch refreshes app.asar from
 your extracted folder, so close DeskFur before launching an updated download.
 Electron's LICENSE and Chromium notices remain in the installed runtime.
 
+SHIMEJI-STYLE PETS
+Pets start with the controls hidden. Right-click a pet for walking, sitting,
+jumping, screen-edge climbing, cursor following and care. Pick it up and drop it.
+Ctrl+Shift+P, the tray menu or the small DeskFur button opens the controls.
+
 CUSTOM SPRITES
 Use Import Sprite in the app. A transparent PNG works immediately. For animation
-choose a character.json pack; keep its PNG in the same folder. The sprites folder
+choose a character.json pack; keep its PNG in the same folder. The sprite-examples folder
 contains an original Mochi example and EDITING-GUIDE.txt. You can use Notepad and
 your usual image editor to make your own pets.
 
