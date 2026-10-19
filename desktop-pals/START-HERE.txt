@@ -1,10 +1,15 @@
 DeskFur - your desktop, a little furrier.
 
-WINDOWS START
-1. Extract the entire ZIP (do not run files from inside the ZIP viewer).
-2. Double-click Start-DeskFur.cmd.
-3. The first launch downloads a verified official runtime, about 151 MiB.
-4. Keep the folder and use the same CMD file to reopen the app later.
+WINDOWS START - EXE INSTALLER
+1. Quit any older DeskFur using the tray menu.
+2. Double-click DeskFur-Setup-0.2.1.exe.
+3. Setup installs everything, creates a desktop shortcut, and opens your pet.
+4. Later, double-click DeskFur on your desktop. No commands are needed.
+
+The installer contains the complete runtime. No separate download is required.
+Windows 10/11 64-bit, current-user install, no administrator rights needed.
+If using the older ZIP download instead: extract it and run Start-DeskFur.cmd.
+That fallback downloads a verified runtime only on its first launch.
 
 SHIMEJI BEHAVIOR: pets walk, sit, jump, climb screen edges and fall when dropped.
 Right-click a pet for its menu. Controls start hidden; use Ctrl+Shift+P or the
@@ -16,7 +21,7 @@ mode. Ctrl+Shift+P or the tray menu restores hidden controls. Quiet mode mutes
 sounds. Your primary pet can be customized; the extra companion is local.
 
 SPRITES: import your PNG or JSON sprite pack. Try
-sprite-examples/mochi/character.json. Use the grid controls to animate a sheet,
+%LOCALAPPDATA%\Programs\DeskFur\resources\sprite-examples\mochi\character.json. Use the grid controls to animate a sheet,
 then export PNG + JSON for easy editing. See sprite-examples/EDITING-GUIDE.txt.
 
 FRIENDS: Internet multiplayer needs a hosted relay. A public relay is NOT included
@@ -43,6 +48,6 @@ Dice also work offline. Messages are delivered while users are in the room.
 TEST STATUS
 77 automated checks passed, covering sprite/import, Shimeji physics, relay messages,
 multiplayer games, and browser/UI interactions. Validation also includes a
-native Linux Electron check of the packaged app. Windows runtime download was
-verified, but the Windows launcher, transparency and click-through need testing
+native Linux Electron check of the packaged app. The installer payload was
+verified, but Windows installation, transparency and click-through need testing
 on a Windows PC. Internet relay deployment is still a user setup step.

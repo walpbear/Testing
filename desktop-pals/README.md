@@ -4,9 +4,11 @@ Original anthro desktop pets for Windows, with custom PNG sprites, online privat
 
 ## Start on Windows
 
-Download `modding/deskfur-windows-setup.zip`, extract the entire ZIP, then double-click **Start-DeskFur.cmd**. Windows 10/11 x64 is the intended platform. First launch downloads about 151 MiB of the official Electron 44.9.0 runtime from GitHub and verifies its pinned SHA-256. Later launches use that saved runtime. Administrator rights, npm, and a separate Node installation are not required. Keep the extracted folder; launch its CMD file again to reopen DeskFur.
+Download **`modding/DeskFur-Setup-0.2.1.exe`** and double-click it. Close any older DeskFur first using its tray menu. The installer bundles the complete runtime, installs for the current Windows user, creates desktop and Start-menu shortcuts, and opens the pet. After installation, double-click **DeskFur** on the desktop. No script launcher, separate runtime download, Node installation or administrator rights are needed. Windows 10/11 x64 is the intended platform.
 
-The runtime installs under `%LOCALAPPDATA%/DeskFur`. User settings use Electron's standard per-user application-data directory. Replacing the setup folder updates the app on the next launcher run. Windows launcher code was reviewed but has not been executed on Windows in this cloud machine; native Electron behavior was exercised on Linux instead.
+The installer uses `%LOCALAPPDATA%/Programs/DeskFur`; preferences keep the original `%APPDATA%/deskfur` location. Reopening DeskFur brings back the original controls instead of starting another pet overlay. Windows Apps settings can uninstall it; pet preferences are retained. The installer is unsigned. Its file archive and bundled application were checked here, and native repeat-launch behavior was exercised on Linux; the installer has not been run on Windows in this environment.
+
+The older ZIP/script setup is retained as a fallback. Its `app.asar` refresh now skips identical files and uses a real backup path for changed updates, avoiding the PowerShell null-backup replacement failure. It continues to reuse its verified runtime; the EXE installer does not use that script.
 
 ## Pet controls
 
@@ -41,7 +43,7 @@ Dice support D4,D6,D8,D10,D12,D20,D100 and modifiers from−20 to+20. Online rol
 
 ## Development
 
-Node 24 recommended. `npm ci` in this directory installs Electron and build/test tools. `npm start` opens the desktop app. `npm run build:app` creates `build/app.asar`; distribute it beside the files under `windows/` and the sprite examples. `npm run dist:win` can create a conventional unpacked Electron Windows app if release-download access is available. Build artifacts and node_modules are ignored. The separate relay has its own pinned package-lock and starts with `npm ci && npm start` from `server`.
+Node 24 recommended. `npm ci` in this directory installs Electron and build/test tools. `npm start` opens the desktop app. `npm run build:app` creates `build/app.asar`; distribute it beside the files under `windows/` and the sprite examples. `npm run dist:win` packages the Windows app, then compiles the per-user offline installer using the NSIS toolset pinned by electron-builder. `DESKFUR_ELECTRON_DIST` can point to an already verified unpacked runtime, and `DESKFUR_BUILD_DIR` overrides the output directory. The NSIS source is in `installer/deskfur.nsi`; it needs no Wine or code-signing credentials. Only English Chromium UI locale resources are bundled; Unicode pet names and local time formatting still use the full ICU data. Build artifacts and node_modules are ignored. The separate relay has its own pinned package-lock and starts with `npm ci && npm start` from `server`.
 
 Tests:
 

@@ -122,25 +122,39 @@ try {
         Write-Host 'The verified runtime is ready.'
     }
 
-    # Always refresh the application from this extracted download, so replacing
-    # the setup folder is enough to update DeskFur while retaining user data.
+    # Refresh changed application files from this extracted download. An already
+    # current app needs no replacement, including while its files are in use.
     $ResourcesDirectory = Join-Path $RuntimeDirectory 'resources'
     $DefaultApp = Join-Path $ResourcesDirectory 'default_app.asar'
     if (Test-Path -LiteralPath $DefaultApp -PathType Leaf) { Remove-Item -LiteralPath $DefaultApp -Force }
     $InstalledApp = Join-Path $ResourcesDirectory 'app.asar'
-    $TemporaryApp = Join-Path $ResourcesDirectory ('.app-' + [Guid]::NewGuid().ToString('N') + '.asar')
-    Copy-Item -LiteralPath $SourceApp -Destination $TemporaryApp -Force
     try {
-        if (Test-Path -LiteralPath $InstalledApp -PathType Leaf) {
-            [System.IO.File]::Replace($TemporaryApp, $InstalledApp, $null)
+        $InstalledAppExists = Test-Path -LiteralPath $InstalledApp -PathType Leaf
+        $SourceHash = (Get-FileHash -LiteralPath $SourceApp -Algorithm SHA256).Hash
+        $InstalledHash = if ($InstalledAppExists) { (Get-FileHash -LiteralPath $InstalledApp -Algorithm SHA256).Hash } else { $null }
+        if (-not $InstalledAppExists -or $SourceHash -ne $InstalledHash) {
+            $AppIdentifier = [Guid]::NewGuid().ToString('N')
+            $TemporaryApp = Join-Path $ResourcesDirectory ('.app-' + $AppIdentifier + '.asar')
+            Copy-Item -LiteralPath $SourceApp -Destination $TemporaryApp -Force
+            if ($InstalledAppExists) {
+                # PowerShell can bind a null string argument as an empty string.
+                # Use a real, unique backup path for .NET's replacement operation.
+                $PreviousApp = Join-Path $ResourcesDirectory ('.app-previous-' + $AppIdentifier + '.asar')
+                [System.IO.File]::Replace($TemporaryApp, $InstalledApp, $PreviousApp)
+                $TemporaryApp = $null
+                # Keep any recovery backup if replacement throws. Cleanup after
+                # a successful replacement must not prevent the app starting.
+                Remove-Item -LiteralPath $PreviousApp -Force -ErrorAction SilentlyContinue
+            }
+            else {
+                [System.IO.File]::Move($TemporaryApp, $InstalledApp)
+                $TemporaryApp = $null
+            }
         }
-        else {
-            [System.IO.File]::Move($TemporaryApp, $InstalledApp)
-        }
-        $TemporaryApp = $null
     }
     catch {
-        throw 'DeskFur could not refresh its application files. Close any running DeskFur windows, then open Start-DeskFur.cmd again.'
+        $RefreshException = $_.Exception
+        throw [System.IO.IOException]::new(('DeskFur could not refresh its application files. Quit DeskFur from its tray menu, then open Start-DeskFur.cmd again. Details: ' + $RefreshException.Message), $RefreshException)
     }
 
     $Executable = Join-Path $RuntimeDirectory 'DeskFur.exe'

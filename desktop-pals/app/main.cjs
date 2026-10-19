@@ -2,6 +2,11 @@ const { app, BrowserWindow, ipcMain, dialog, screen, globalShortcut, Tray, Menu,
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { importSprite, exportSprite, validateSprite } = require('./sprites.cjs');
+// Keep the original portable build's settings directory across installer upgrades.
+app.setName('deskfur');
+if(process.platform==='win32')app.setAppUserModelId('com.deskfur.desktop');
+const primaryInstance=app.requestSingleInstanceLock();
+if(!primaryInstance)app.quit();
 let win, tray;
 const defaults = {shimeji:true,startHidden:true,name:'My pet',dual:false,fullness:70,bond:50,energy:80,expression:'neutral',skin:'cream',size:128,speed:42,volume:0.25,muted:false,relay:'',sprite:null,x:0.55,y:0.78};
 let settings = {...defaults};
@@ -20,7 +25,9 @@ function cleanSettings(value) {
 }
 async function save() { await fs.mkdir(app.getPath('userData'),{recursive:true}); await fs.writeFile(settingsFile()+'.tmp',JSON.stringify(settings)); await fs.rename(settingsFile()+'.tmp',settingsFile()); }
 function showControls(){if(win&&!win.isDestroyed()){win.show();win.setIgnoreMouseEvents(false);win.focus();win.webContents.send('show-controls');}}
+app.on('second-instance',showControls);
 app.whenReady().then(async()=>{
+  if(!primaryInstance)return;
   try {settings=cleanSettings(JSON.parse(await fs.readFile(settingsFile(),'utf8')));} catch {}
   const area=screen.getPrimaryDisplay().workArea;
   win=new BrowserWindow({...area,frame:false,transparent:true,resizable:false,hasShadow:false,alwaysOnTop:true,backgroundColor:'#00000000',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
