@@ -1,0 +1,36 @@
+Wife's Bedroom desktop overlay — validation
+
+Passed:
+- Win32 helper compiled as an x64 GUI EXE with -Wall -Wextra -Werror.
+- Its only imported DLLs are Windows system components; no .NET install needed.
+- Patched data.win reloads in UndertaleModTool without errors.
+- All 21 root code entries, including nested functions, decompile successfully.
+- Only five intended root draw/create/step events change.
+- All 109 sprites, 580 texture page items, 4 embedded texture payloads and
+  68 embedded audio clips remain unchanged, along with other game resources.
+- All 146 original sprite draw calls, 4 partial-sprite calls and 5 frame-count
+  calls in the main draw event retain their order and exact arguments.
+- Eight executable control-protocol checks pass, including Begin/start timing,
+  ordinary launch, queued-start cancellation, F9 toggles and Escape recovery.
+  These execute the GML control source with mock window/input bindings; they
+  do not emulate GameMaker rendering or Windows.
+- Reapplying the archive patch is rejected before any output is written.
+
+Not performed in this Linux environment:
+- Live Windows game rendering, transparency, click-through and gameplay.
+- Real Windows F9/F10/tray behavior, display scaling and restore operations.
+
+Windows acceptance checks:
+1. Launch through Start-Desktop-Overlay.exe and complete the original Begin flow.
+2. Check that the desktop shows through the room/interface area while the
+   original character remains visible and responds to the original controls.
+3. F9 should restore the full game; change a character/pose, then F9 again.
+4. F10 should switch views while another normal application is focused.
+5. Exit helper from its tray menu, including while waiting at Begin. The game
+   should remain in normal view without a pending automatic overlay.
+6. Confirm your usual custom sprites, palette in normal view, and display scale.
+
+Base data.win SHA256:
+6243827eb1d7b9788da9c541669b3d45430cc51ea25770d74acb41bdef144d46
+Patched data.win SHA256:
+8dfdc127c5472f6790dad4cb24bf7e82b45e3c09383784f80f4c766c86d45633
