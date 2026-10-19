@@ -1,0 +1,65 @@
+DESKFUR — EASY SPRITE CUSTOMIZATION
+
+The quickest way: choose Import Sprite in DeskFur, then select any transparent
+PNG. It becomes a static pet. No coding or game editor is required.
+
+For animation, copy the mochi folder and edit character.json in Notepad.
+Replace sheet.png with your own transparent PNG sprite sheet. Select the JSON
+file in Import Sprite so the app can read the sheet and its animation settings.
+
+Example settings:
+{
+  "name": "My fluffy friend",
+  "image": "sheet.png",
+  "frameWidth": 96,
+  "frameHeight": 96,
+  "fps": 7,
+  "animations": {
+    "idle": [0, 1],
+    "walk": [2, 3, 4, 5],
+    "sleep": [6, 7],
+    "play": [8, 9, 10, 11],
+    "happy": [8, 9, 10, 11],
+    "pet": [9, 10, 9, 8]
+  }
+}
+
+Each grid cell must have the same size. Number frames from 0, across each row
+from left to right, then continue on the next row. The included 384 x 288 sheet
+has four columns and three rows of 96 x 96 cells:
+
+    0   1   2   3
+    4   5   6   7
+    8   9  10  11
+
+Keep the paws at the same height and the body centered inside every cell to
+avoid jumping between frames. Leave transparent space around ears and tails.
+Use RGBA PNG export for transparency. An animation can repeat a frame, such as
+"idle": [0, 0, 1, 0]. Omitted base animations use the idle animation.
+
+You can also add these optional action/expression animations:
+"eat", "pet", "happy", "sad", "surprised", "angry".
+Each uses the same frame-number list format. Add dedicated frames for chewing,
+head pats, smiles, sad ears, surprise, or angry faces, then list those frame
+numbers. Optional actions can be omitted: the app will use a base animation.
+The Mochi pack demonstrates happy and pet using its existing raised-paw frames.
+
+Name: 1–48 characters. FPS: 1–24. Frame size: 1–4096 pixels per side.
+PNG: at most 4096 x 4096 pixels and 2 MiB. At most 256 cells per sheet and 64
+frame numbers per animation. Frame width/height must divide the image exactly.
+Base actions: idle, walk, sleep, play. Optional: eat, pet, happy, sad, surprised,
+angry. Use JSON plus a PNG sheet for animated
+pets; APNG, GIF, SVG, URLs, and scripts are not supported.
+
+The image filename must point inside the same folder or one of its subfolders.
+For example "image": "art/my-pet.png" is allowed. Keep both files together when
+sharing a pack. Relative paths cannot contain .. or backslashes.
+
+To share your current pet, use Export Sprite. DeskFur creates a JSON file and a
+uniquely named PNG beside it. Send both to your friend, or ZIP the folder.
+Export never overwrites an existing image; old exported images may be removed
+manually when no JSON file uses them.
+
+Mochi is an original cream-furred kemono mascot made for this app. The example
+sprite art and generator are available under the app's MIT license. You may
+edit, replace, or share them with your pet packs.

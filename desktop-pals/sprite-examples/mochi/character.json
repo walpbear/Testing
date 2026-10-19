@@ -1,0 +1,15 @@
+{
+  "name": "Mochi",
+  "image": "sheet.png",
+  "frameWidth": 96,
+  "frameHeight": 96,
+  "fps": 7,
+  "animations": {
+    "idle": [0, 1],
+    "walk": [2, 3, 4, 5],
+    "sleep": [6, 7],
+    "play": [8, 9, 10, 11],
+    "happy": [8, 9, 10, 11],
+    "pet": [9, 10, 9, 8]
+  }
+}

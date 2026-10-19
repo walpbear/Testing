@@ -1,0 +1,46 @@
+{
+  "name": "deskfur",
+  "version": "0.1.0",
+  "description": "Customizable anthro desktop pets with shared rooms and mini-games",
+  "main": "app/main.cjs",
+  "author": "DeskFur contributors",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.cjs",
+    "test:ui": "playwright test",
+    "dist:win": "electron-builder --win dir --x64",
+    "dist:linux": "electron-builder --linux dir --x64",
+    "build:app": "node scripts/package-app.cjs"
+  },
+  "devDependencies": {
+    "electron": "44.9.0",
+    "electron-builder": "26.15.3",
+    "@playwright/test": "1.64.1",
+    "@electron/asar": "3.4.1"
+  },
+  "build": {
+    "appId": "com.deskfur.desktop",
+    "productName": "DeskFur",
+    "directories": {
+      "output": "build"
+    },
+    "files": [
+      "app/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": "dir",
+      "signAndEditExecutable": false
+    },
+    "linux": {
+      "target": "dir",
+      "category": "Game"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.games"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ws: wss:; object-src 'none'; base-uri 'none'"><title>DeskFur</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="games.css"></head><body>
+<canvas id="pets" aria-label="Your desktop pets"></canvas>
+<main id="panel" class="panel">
+<header><div class="brand"><span class="paw">✦</span><div><h1>DeskFur</h1><p>Your desktop. A little furrier.</p></div></div><button id="hide" class="icon" title="Hide controls · Ctrl+Shift+P">−</button></header>
+<div class="status"><span id="dot"></span><span id="connection">Cozy offline</span><span id="roomBadge"></span></div>
+<nav aria-label="Pet controls"><button class="tab selected" data-tab="pet">My pet</button><button class="tab" data-tab="friends">Friends</button><button class="tab" data-tab="sprites">Sprites</button><button class="tab" data-tab="games">Games</button></nav>
+<section id="petTab" class="tab-content"><div class="intro"><h2>A little company for your desktop</h2><p>Drag your pet anywhere. Double-click for a heart.</p></div>
+<label>Pet name<input id="name" maxlength="24" placeholder="My pet"></label>
+<div class="skin-grid"><button data-skin="cream" class="skin selected">☁<span>Cream</span></button><button data-skin="fox" class="skin">✦<span>Fox</span></button><button data-skin="cat" class="skin">☾<span>Cat</span></button><button data-skin="wolf" class="skin">❄<span>Wolf</span></button></div>
+<label class="range-label">Pet size <output id="sizeValue"></output><input id="size" type="range" min="64" max="240"></label>
+<label class="range-label">Wandering speed <output id="speedValue"></output><input id="speed" type="range" min="0" max="120"></label>
+<div class="actions"><button id="wave">👋 Wave</button><button id="heart">♡ Heart</button><button id="sleep">☾ Sleep</button></div>
+<div class="actions"><button id="feed">🍎 Feed</button><button id="petting">✧ Pet</button><button id="time">◷ Time</button></div>
+<div class="care"><span>Fullness <b id="fullness">70</b></span><span>Bond <b id="bond">50</b></span><span>Energy <b id="energy">80</b></span></div>
+<label>Expression<select id="expression"><option value="neutral">Neutral</option><option value="happy">Happy</option><option value="sad">Sad</option><option value="surprised">Surprised</option><option value="sleepy">Sleepy</option><option value="angry">Grumpy</option></select></label>
+<label class="check"><input type="checkbox" id="dual">Duo mode · a second local pet</label><p class="hint">Click a pet to select it. Both local pets can be moved and cared for. Your primary pet joins online rooms.</p>
+<form id="askForm"><input id="ask" placeholder="Ask: what time is it?" aria-label="Ask your pet"><button>Ask pet</button></form><label class="check"><input type="checkbox" id="mute">Quiet mode</label>
+</section>
+<section id="friendsTab" class="tab-content" hidden><div class="intro"><h2>Your own little gathering</h2><p>Share a room with up to 8 friends, even on different Wi-Fi.</p></div>
+<label>Shared relay address<input id="relay" type="url" placeholder="wss://your-paw-pals.onrender.com" spellcheck="false"></label><p class="hint">One hosted relay is required for internet play. Both friends enter the same address. See START-HERE.txt.</p>
+<button id="create" class="primary">Create a private room</button>
+<div class="join"><input id="code" placeholder="Friend's room code" maxlength="16" aria-label="Room code"><button id="join">Join</button></div>
+<div id="roomInfo" hidden><div class="room-code"><span>YOUR ROOM CODE</span><strong id="roomCode"></strong><button id="copy">Copy</button></div><div id="people"></div><button id="leave">Leave room</button></div>
+<label>Send to<select id="messageTo"><option value="">Everyone in room</option></select></label><div id="messages" class="messages" aria-live="polite"></div><form id="chatForm"><input id="chat" maxlength="140" placeholder="Send a little hello…" aria-label="Chat message"><button>Send</button></form>
+</section>
+<section id="spritesTab" class="tab-content" hidden><div class="intro"><h2>Make them yours</h2><p>Bring your own art. PNGs and animated sprite sheets work.</p></div><button id="import" class="primary">＋ Import PNG / sprite pack</button><p id="spriteInfo" class="hint">Using an original built-in kemono pet.</p>
+<div class="two"><label>Sheet columns<input id="columns" type="number" min="1" max="32" value="1"></label><label>Sheet rows<input id="rows" type="number" min="1" max="32" value="1"></label></div>
+<label>Frames per second<input id="fps" type="number" min="1" max="24" value="8"></label>
+<p class="hint">Frame numbers start at 0, left to right, then next row. Example: 0,1,2,3</p>
+<div class="anim-grid"><label>Idle<input id="animIdle" value="0"></label><label>Walk<input id="animWalk" value="0"></label><label>Sleep<input id="animSleep" value="0"></label><label>Play<input id="animPlay" value="0"></label></div>
+<button id="applySprite">Apply animation settings</button><button id="export">Export editable sprite pack</button><button id="builtin">Use built-in pet</button><p class="hint">Custom sprites sync to your friends. Transparent PNG, up to 4096 × 4096 and 2 MB. Export creates a PNG + editable JSON file.</p>
+</section><section id="gamesTab" class="tab-content" hidden></section>
+<footer><span id="feedback" role="status">A small friend is waiting for you.</span><button id="quit" class="text">Quit</button></footer>
+</main><div id="restore" hidden><button id="show">✦ DeskFur</button></div><script src="pet.js"></script><script src="renderer.js"></script><script src="games.js"></script></body></html>

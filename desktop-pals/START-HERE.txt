@@ -1,0 +1,42 @@
+DeskFur - your desktop, a little furrier.
+
+WINDOWS START
+1. Extract the entire ZIP (do not run files from inside the ZIP viewer).
+2. Double-click Start-DeskFur.cmd.
+3. The first launch downloads a verified official runtime, about 151 MiB.
+4. Keep the folder and use the same CMD file to reopen the app later.
+
+MY PET: drag, feed, pet, sleep, change expression, ask the time, and turn on Duo
+mode. Ctrl+Shift+P or the tray menu restores hidden controls. Quiet mode mutes
+sounds. Your primary pet can be customized; the extra companion is local.
+
+SPRITES: import your PNG or JSON sprite pack. Try
+sprite-examples/mochi/character.json. Use the grid controls to animate a sheet,
+then export PNG + JSON for easy editing. See sprite-examples/EDITING-GUIDE.txt.
+
+FRIENDS: Internet multiplayer needs a hosted relay. A public relay is NOT included
+or running yet. One friend hosts the provided server once; both enter the same
+wss:// address, then create/join using a private room code.
+
+HOST ON RENDER (one-time setup by one friend)
+Create a Node Web Service from https://github.com/walpbear/Testing
+Root directory: desktop-pals/server
+Build command: npm ci --omit=dev
+Start command: npm start
+Health check path: /health
+Node version: 24
+Review the hosting plan; free-plan availability and sleep limits may change.
+When your URL is https://your-service.onrender.com, enter
+wss://your-service.onrender.com in DeskFur. Share that address and your room code.
+Full server source, Render configuration, and instructions are in server/.
+You can also host it elsewhere with WebSocket/TLS support.
+
+GAMES: choose a connected friend, challenge them to tic-tac-toe, RPS, or High Card.
+The friend accepts before play. Shared dice support D4 through D100 and modifiers.
+Dice also work offline. Messages are delivered while users are in the room.
+
+TEST STATUS
+52 automated checks passed (13 sprite/import, 26 relay, 13 browser/UI), plus a
+native Linux Electron check of the packaged app. Windows runtime download was
+verified, but the Windows launcher, transparency and click-through need testing
+on a Windows PC. Internet relay deployment is still a user setup step.
